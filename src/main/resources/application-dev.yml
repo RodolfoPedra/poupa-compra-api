@@ -1,0 +1,10 @@
+spring:
+  elasticsearch:
+     uris: https://localhost:9200
+     username: elastic
+     password: didwmz53
+  datasource:   
+    poupacompra:
+      url : jdbc:postgresql://localhost:5432/poupacompra
+      username : postgres
+      password : example
