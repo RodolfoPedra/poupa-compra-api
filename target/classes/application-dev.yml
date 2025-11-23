@@ -1,10 +1,9 @@
 spring:
-  elasticsearch:
-     uris: https://localhost:9200
-     username: elastic
-     password: didwmz53
-  datasource:   
-    poupacompra:
-      url : jdbc:postgresql://localhost:5432/poupacompra
-      username : postgres
-      password : example
+  # elasticsearch:
+  #    uris: 62.164.217.75:9200
+  #    username: elastic
+  #    password: didwmz53
+  datasource:
+      url: jdbc:postgresql://localhost:5432/poupa_compra
+      username: postgres
+      password: postgresql
