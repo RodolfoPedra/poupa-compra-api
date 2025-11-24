@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.poupacompra.integracao.dto.NotaCompletaDTO;
-import br.com.poupacompra.integracao.model.GeralNota;
+import br.com.poupacompra.integracao.model.nota.GeralNota;
 import br.com.poupacompra.integracao.service.NotaService;
 
 
