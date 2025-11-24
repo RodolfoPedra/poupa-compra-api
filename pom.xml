@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.0</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
     <groupId>br.com.poupacompra</groupId>
@@ -39,6 +39,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
         </dependency>
 
         <dependency>
@@ -97,10 +102,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <dependency>
+        <!-- <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
-        </dependency>
+        </dependency> -->
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -146,7 +151,7 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <plugin>
+            <!-- <plugin>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-codegen-maven</artifactId>
                 <executions>
@@ -160,7 +165,7 @@
                 <configuration>
                     <jdbc>
                         <driver>org.postgresql.Driver</driver>
-                        <url>jdbc:postgresql://localhost:5432/poupa_compra</url>
+                        <url>jdbc:postgresql://postgres.localhost:5432/poupa_compra</url>
                         <user>postgres</user>
                         <password>postgresql</password>
                     </jdbc>
@@ -179,11 +184,11 @@
                         </database>
                     </generator>
                 </configuration>
-            </plugin>
+            </plugin> -->
         </plugins>
     </build>
 
-    <dependencyManagement>
+    <!-- <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.jooq</groupId>
@@ -196,5 +201,5 @@
                 <version>3.20.6</version>
             </dependency>
         </dependencies>
-    </dependencyManagement>
+    </dependencyManagement> -->
 </project>
