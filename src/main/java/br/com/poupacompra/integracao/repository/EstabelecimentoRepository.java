@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import br.com.poupacompra.integracao.model.Estabelecimento;
+import br.com.poupacompra.integracao.model.nota.Estabelecimento;
 
 
 public interface EstabelecimentoRepository extends JpaRepository<Estabelecimento, Long>{

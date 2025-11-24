@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 
 import br.com.poupacompra.integracao.config.ModelMapperConfig;
 import br.com.poupacompra.integracao.dto.NotaCompletaDTO;
-import br.com.poupacompra.integracao.model.Estabelecimento;
-import br.com.poupacompra.integracao.model.GeralNota;
-import br.com.poupacompra.integracao.model.ItensNota;
+import br.com.poupacompra.integracao.model.nota.Estabelecimento;
+import br.com.poupacompra.integracao.model.nota.GeralNota;
+import br.com.poupacompra.integracao.model.nota.ItensNota;
 import br.com.poupacompra.integracao.repository.EstabelecimentoRepository;
 import br.com.poupacompra.integracao.repository.NotaRepository;
 import br.com.poupacompra.integracao.service.NotaService;
