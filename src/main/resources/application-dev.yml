@@ -4,6 +4,6 @@ spring:
   #    username: elastic
   #    password: didwmz53
   datasource:
-      url: jdbc:postgresql://localhost:5432/poupa_compra
+      url: jdbc:postgresql://postgres.localhost:5432/poupa_compra
       username: postgres
       password: postgresql
