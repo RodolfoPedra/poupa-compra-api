@@ -62,7 +62,7 @@ public class GeralNota {
     private String chaveAcesso;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "estabelecimento_id", referencedColumnName = "id", nullable = false)
     private Estabelecimento estabelecimento;
 
