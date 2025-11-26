@@ -1,4 +1,4 @@
-package br.com.poupacompra.integracao.dto;
+package br.com.poupacompra.integracao.dto.nota;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,7 +11,7 @@ public class NotaDTO {
 
     private Integer quantidadeItens;
     private float valorTotal;
-    private Long usuarioId;
+    private Long usuario;
     private Integer numeroCfe;
     private String ufCfe;
     private String dataHoraEmissao;

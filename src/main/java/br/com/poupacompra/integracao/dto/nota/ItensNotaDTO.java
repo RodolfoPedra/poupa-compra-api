@@ -1,4 +1,4 @@
-package br.com.poupacompra.integracao.dto;
+package br.com.poupacompra.integracao.dto.nota;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
