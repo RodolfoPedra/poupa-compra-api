@@ -1,0 +1,54 @@
+{
+	"estabelecimento": {
+		"nomeEstabelecimento": "SANTO ANTONIO DISTRIBUIDORA DE ALIMENTOS LTDA",
+		"cpfCnpj": "00000000000005",
+		"endereco": "AVENIDA JULIO DE CASTILHO , 3540 , , LAR DO TRABALHADOR , CAMPO GRANDE , MS"
+	},
+	"itensNota": [
+		{
+			"descricao": "LING TOSCANA KG",
+			"quantidade": 1.64,
+			"tipoUnidade": "KG",
+			"valorUnitario": 21.9,
+			"valorTotal": 35.92
+		},
+		{
+			"descricao": "OVOS BCO CAMVA GDE C18",
+			"quantidade": 1,
+			"tipoUnidade": "DZ",
+			"valorUnitario": 12.98,
+			"valorTotal": 12.98
+		},
+		{
+			"descricao": "TAPIOCA BEIJUBOM 500G",
+			"quantidade": 1,
+			"tipoUnidade": "UN",
+			"valorUnitario": 7.49,
+			"valorTotal": 7.49
+		},
+		{
+			"descricao": "BISC VITAR MAIZ 350G",
+			"quantidade": 1,
+			"tipoUnidade": "UN",
+			"valorUnitario": 7.79,
+			"valorTotal": 7.79
+		},
+		{
+			"descricao": "SUCO TAMP FRUT CIT 2L",
+			"quantidade": 1,
+			"tipoUnidade": "UN",
+			"valorUnitario": 11.99,
+			"valorTotal": 11.99
+		}
+	],
+	"nota": {
+		"quantidadeItens": 5,
+		"valorTotal": 76.17,
+		"usuario": 2,
+		"numeroCfe": 511953,
+		"ufCfe": "MS",
+		"dataHoraEmissao": "26/10/2024 10:53:00",
+		"urlCfe": "https://www.dfe.ms.gov.br/nfce/qrcode/?p=50241008370598000201651080005119521994880479|2|1|1|D8577B589685A117804C5C10565FD9E772E92584",
+		"chaveAcesso": "5024 1008 3705 9800 0201 6510 8000 5119 5219 9488 0479"
+	}
+}
