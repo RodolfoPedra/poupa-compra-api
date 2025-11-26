@@ -1,5 +1,7 @@
 package br.com.poupacompra.integracao.model.nota;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -46,6 +48,7 @@ public class ItensNota {
     private Float valortotal;
 
     @NotNull
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nota_id", referencedColumnName = "id", nullable = false)
     private GeralNota nota;

@@ -39,7 +39,7 @@ public class GeralNota {
 
     @NotNull
     @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    private Long usuario;
 
     @NotNull
     @Column(name = "numero_cfe", nullable = false)
@@ -68,6 +68,10 @@ public class GeralNota {
 
     @OneToMany(mappedBy = "nota", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItensNota> itensNotas = new ArrayList<>();
+
+    // @Version
+    // @Column(name = "version")
+    // private Long version;
 
     public void setItensNotas(List<ItensNota> itensNotas ) {
         this.itensNotas = itensNotas;

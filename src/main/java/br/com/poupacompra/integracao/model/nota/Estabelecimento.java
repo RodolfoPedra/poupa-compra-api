@@ -3,6 +3,8 @@ package br.com.poupacompra.integracao.model.nota;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,7 +43,12 @@ public class Estabelecimento {
     @Column(name = "endereco", nullable = false, length = 200)
     private String endereco;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "estabelecimento", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GeralNota> notas = new ArrayList<>();
+
+    // @Version
+    // @Column(name = "version")
+    // private Long version;
 
 }
