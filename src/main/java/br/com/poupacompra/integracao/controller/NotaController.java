@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.poupacompra.integracao.common.converter.impl.GeralNotaConverter;
 import br.com.poupacompra.integracao.dto.nota.NotaCompletaDTO;
-import br.com.poupacompra.integracao.service.NotaService;
+import br.com.poupacompra.integracao.dto.nota.NotaDTO;
+import br.com.poupacompra.integracao.model.nota.GeralNota;
+import br.com.poupacompra.integracao.service.nota.NotaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,9 +25,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class NotaController {
 
     private final NotaService notaService;
+    private final GeralNotaConverter geralNotaConverter;
 
-    public NotaController(@Autowired NotaService notaService) {
+    public NotaController(@Autowired NotaService notaService, @Autowired GeralNotaConverter geralNotaConverter) {
         this.notaService = notaService;
+        this.geralNotaConverter = geralNotaConverter;
     }
 
     @Operation(summary = "Salvar Nota Fiscal", description = "Endpoint para salvar uma nova nota fiscal", method = "POST")
@@ -34,8 +39,11 @@ public class NotaController {
             @ApiResponse(responseCode = "400", description = "Requisição inválida"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<Void> salvarNota(@RequestBody NotaCompletaDTO nota) {
-        notaService.salvarNota(nota);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<NotaDTO> salvarNota(@RequestBody NotaCompletaDTO nota) {
+
+        GeralNota geralNota = notaService.salvarNota(nota);
+        NotaDTO notaDTO = geralNotaConverter.entityToDto(geralNota);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(notaDTO);
     }
 }

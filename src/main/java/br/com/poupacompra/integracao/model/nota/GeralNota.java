@@ -16,12 +16,18 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Builder
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "geral_nota")
 public class GeralNota {
     @Id
@@ -41,8 +47,7 @@ public class GeralNota {
     @Column(name = "usuario_id", nullable = false)
     private Long usuario;
 
-    @NotNull
-    @Column(name = "numero_cfe", nullable = false)
+    @Column(name = "numero_cfe")
     private Integer numeroCfe;
 
     @Size(max = 2)
@@ -68,10 +73,6 @@ public class GeralNota {
 
     @OneToMany(mappedBy = "nota", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItensNota> itensNotas = new ArrayList<>();
-
-    // @Version
-    // @Column(name = "version")
-    // private Long version;
 
     public void setItensNotas(List<ItensNota> itensNotas ) {
         this.itensNotas = itensNotas;

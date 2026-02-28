@@ -13,12 +13,18 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Builder
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "itens_nota")
 public class ItensNota {
     @Id
@@ -31,9 +37,9 @@ public class ItensNota {
     @Column(name = "descricao", nullable = false, length = 50)
     private String descricao;
 
-    @Size(max = 5)
-    @Column(name = "quantidade", length = 5)
-    private String quantidade;
+    @NotNull
+    @Column(name = "quantidade", nullable = false)
+    private Float quantidade;
 
     @Size(max = 3)
     @Column(name = "tipo_unidade", length = 3)
@@ -44,8 +50,8 @@ public class ItensNota {
     private Float valorUnitario;
 
     @NotNull
-    @Column(name = "valortotal", nullable = false)
-    private Float valortotal;
+    @Column(name = "valor_total", nullable = false)
+    private Float valorTotal;
 
     @NotNull
     @JsonIgnore

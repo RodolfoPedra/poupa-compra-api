@@ -22,10 +22,6 @@ spring:
     name: "integracao-poupa-compra"
   main:
     banner-mode: "off"
-  # elasticsearch:
-  #   uris: https://${url.elastic}
-  #   username: ${username.elastic}
-  #   password: ${passwaord.elastic}
   datasource:
       url: jdbc:postgresql://${ds.integracao.pc.url}/poupa_compra
       username: ${ds.integracao.pc.user}

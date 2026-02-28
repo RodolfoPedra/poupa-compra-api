@@ -1,0 +1,9 @@
+spring:
+  # elasticsearch:
+  #    uris: 62.164.217.75:9200
+  #    username: elastic
+  #    password: didwmz53
+  datasource:
+      url: jdbc:postgresql://localhost:5432/poupacompra
+      username: postgres
+      password: postgresql
