@@ -1,0 +1,29 @@
+{
+  "name": "poupacompra-api",
+  "description": "Api de cadastro e administração de notas fiscais para o projeto Poupacompra",
+  "keywords": ["spring", "java"],
+  "env": {
+    "SPRING_PROFILES_ACTIVE": {
+      "description": "Spring profile ativo (dev, staging, prod). Definida via: dokku config:set <app> SPRING_PROFILES_ACTIVE=<nome_profile>",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "healthchecks": {
+    "web": [
+      {
+        "type": "startup",
+        "name": "web check",
+        "description": "Verifica se a aplicação iniciou corretamente",
+        "path": "/actuator/health",
+        "initialDelay": 20,
+        "timeout": 30,
+        "attempts": 3
+      }
+    ]
+  }
+}
