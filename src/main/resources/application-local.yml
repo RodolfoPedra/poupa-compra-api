@@ -1,9 +1,11 @@
 spring:
-  # elasticsearch:
-  #    uris: 62.164.217.75:9200
-  #    username: elastic
-  #    password: didwmz53
   datasource:
-      url: jdbc:postgresql://localhost:5432/poupacompra
+      url: jdbc:postgresql://postgres:5432/poupacompra
       username: postgres
       password: postgresql
+  jpa:
+    open-in-view: false
+    show-sql: true
+    properties:
+       hibernate:
+         dialect: org.hibernate.dialect.PostgreSQLDialect

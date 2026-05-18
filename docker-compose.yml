@@ -1,47 +1,21 @@
 services:
   poupacompra:
-    build: .
+    build:
+      context: .
+      dockerfile: local.Dockerfile
     image: poupacompra_local
+    container_name: poupacompra-integracao
     networks:
-      - net_swarm
-    # ports:
-    #   - 8181:8181
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.poupacompra.rule=Host(`poupacompra.swarm.localhost`)"
-        - "traefik.http.routers.poupacompra.entrypoints=websecure"
-        - "traefik.http.routers.poupacompra.tls=true"
-        - "traefik.http.services.poupacompra.loadbalancer.server.port=8181"
-      resources:
-        limits:
-          cpus: "0.8"
-          memory: 512M
-        reservations:
-          cpus: "0.5"
-          memory: 256M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 10s
-      rollback_config:
-        parallelism: ${PARALLELISM-1}
-        delay: 5s
-        order: start-first
-      update_config:
-        parallelism: ${PARALLELISM-1}
-        delay: 5s
-        order: start-first
+      - local
+    ports:
+      - 8182:8182
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8181/integracao-poupa-compra/actuator/health || exit 1
+      test: wget --no-verbose --tries=1 --spider http://localhost:8182/integracao-poupa-compra/actuator/health || exit 1
       interval: 20s
       timeout: 10s
       retries: 3
       start_period: 30s
 
 networks:
-  net_swarm:
-    driver: overlay
-    attachable: true
+  local:
     external: true

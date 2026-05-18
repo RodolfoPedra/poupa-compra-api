@@ -1,5 +1,4 @@
 server:
-  port: 8182
   servlet:
     context-path: /integracao-poupa-compra
 #   tomcat:
@@ -21,30 +20,7 @@ spring:
   application:
     name: "integracao-poupa-compra"
   main:
-    banner-mode: "off"
-  datasource:
-      url: jdbc:postgresql://${ds.integracao.pc.url}/poupa_compra
-      username: ${ds.integracao.pc.user}
-      password: ${ds.integracao.pc.password}
-      driver-class-name: org.postgresql.Driver
-      # name: ds.valhalla.seguros_azul
-      # hikari:
-      #   pool-name: ${spring.application.name}__postgres__poupacompra
-      #   maximum-pool-size: 20
-      #   minimum-idle: 5
-      #   idle-timeout: 60000
-      #   connection-timeout: 5000
-      #   max-lifetime: 180000
-      #   auto-commit: false
-      #   transaction-isolation: TRANSACTION_READ_COMMITTED
-      #   connection-test-query: select 1
-      
-  jpa:
-    open-in-view: false
-    show-sql: true
-    properties:
-       hibernate:
-         dialect: org.hibernate.dialect.PostgreSQLDialect
+    banner-mode: "off"      
   flyway:
     enabled: false
   web:

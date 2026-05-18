@@ -1,9 +1,9 @@
-docker compose -f docker-compose.yml build &&
+docker compose build &&
 echo "imagem buildada para execução" &&
-docker stack rm poupacompra &&
+docker compose down &&
 
 sleep 5
 
 echo "removido qualquer stack de traefik no ambiente docker" &&
-docker stack deploy -c docker-compose.yml poupacompra &&
-echo "realizado deploy da stack docker swarm"
+docker compose up -d &&
+echo "realizado deploy da stack docker compose"
