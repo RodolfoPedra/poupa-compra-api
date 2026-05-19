@@ -4,7 +4,9 @@ import org.springframework.stereotype.Component;
 
 import br.com.poupacompra.integracao.common.exception.NotaJaCadastradaException;
 import br.com.poupacompra.integracao.repository.NotaRepository;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class NotaValidation {
 
@@ -17,6 +19,7 @@ public class NotaValidation {
   public void validarNotaExistente(String chaveAcesso) {
     var notaExistente = notaRepository.findByChaveAcesso(chaveAcesso);
     if (notaExistente.isPresent()) {
+      log.warn("Nota já cadastrada no sistema. Chave de acesso: {}", chaveAcesso);
       throw new NotaJaCadastradaException("Nota já cadastrada no sistema.");
     }
   }
