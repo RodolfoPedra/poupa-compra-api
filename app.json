@@ -1,7 +1,10 @@
 {
   "name": "poupacompra-api",
   "description": "Api de cadastro e administração de notas fiscais para o projeto Poupacompra",
-  "keywords": ["spring", "java"],
+  "keywords": [
+    "spring",
+    "java"
+  ],
   "buildpacks": [
     {
       "url": "heroku/jvm"
@@ -11,6 +14,10 @@
     "SPRING_PROFILES_ACTIVE": {
       "description": "Spring profile ativo (dev, staging, prod). Definida via: dokku config:set <app> SPRING_PROFILES_ACTIVE=<nome_profile>",
       "required": true
+    },
+    "SERVER_PORT": {
+      "description": "Porta padrão Spring",
+      "value": "8080"
     }
   }
 }
