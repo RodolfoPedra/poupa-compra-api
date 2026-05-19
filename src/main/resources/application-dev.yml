@@ -1,6 +1,8 @@
 spring:
   datasource:
-      url: jdbc:${DATABASE_URL}
+      url: jdbc:postgresql://${DB_URL}:5432/poupacompra
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     show-sql: false
