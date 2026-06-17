@@ -69,4 +69,9 @@ public class NotaServiceImpl implements NotaService {
     return notaRepository.save(geralNota);
   }
 
+  @Override
+  public List<GeralNota> listarNotas() {
+    return notaRepository.findAll();
+  }
+
 }

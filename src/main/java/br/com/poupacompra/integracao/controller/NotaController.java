@@ -1,9 +1,12 @@
 package br.com.poupacompra.integracao.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,5 +48,19 @@ public class NotaController {
         NotaDTO notaDTO = geralNotaConverter.entityToDto(geralNota);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(notaDTO);
+    }
+
+    @Operation(summary = "Listar Notas Fiscais", description = "Endpoint para listar todas as notas fiscais", method = "GET")
+    @GetMapping(value = "/listar-notas", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Notas listadas com sucesso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    public ResponseEntity<List<NotaDTO>> listarNotas() {
+        List<GeralNota> notas = notaService.listarNotas();
+        List<NotaDTO> notasDTO = notas.stream()
+                .map(geralNotaConverter::entityToDto)
+                .toList();
+        return ResponseEntity.ok(notasDTO);
     }
 }
