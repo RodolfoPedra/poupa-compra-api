@@ -49,8 +49,7 @@ public class ItensNota {
     @Column(name = "valor_unitario", nullable = false)
     private Float valorUnitario;
 
-    @NotNull
-    @Column(name = "codigo_item", nullable = false)
+    @Column(name = "codigo_item")
     private Long codigoItem;
 
     @NotNull
