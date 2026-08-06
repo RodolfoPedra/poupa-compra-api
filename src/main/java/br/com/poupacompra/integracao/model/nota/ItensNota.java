@@ -50,6 +50,10 @@ public class ItensNota {
     private Float valorUnitario;
 
     @NotNull
+    @Column(name = "codigo_item", nullable = false)
+    private Long codigoItem;
+
+    @NotNull
     @Column(name = "valor_total", nullable = false)
     private Float valorTotal;
 

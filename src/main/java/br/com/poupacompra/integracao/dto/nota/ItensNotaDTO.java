@@ -14,6 +14,7 @@ public class ItensNotaDTO {
      private String descricao;
      private Float quantidade;
      private String tipoUnidade;
+     private Long codigoItem;
      private Float valorUnitario;
      private Float valorTotal;
 }
