@@ -41,8 +41,8 @@ public class ItensNota {
     @Column(name = "quantidade", nullable = false)
     private Float quantidade;
 
-    @Size(max = 5)
-    @Column(name = "tipo_unidade", length = 5)
+    @Size(max = 10)
+    @Column(name = "tipo_unidade", length = 10)
     private String tipoUnidade;
 
     @NotNull
