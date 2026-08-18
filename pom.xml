@@ -30,6 +30,8 @@
     <properties>
         <java.version>25</java.version>
         <lombok.version>1.18.46</lombok.version>
+        <spring-kafka.version>3.3.16</spring-kafka.version>
+        <postgresql.version>42.7.12</postgresql.version>
     </properties>
     <dependencies>
         <dependency>
