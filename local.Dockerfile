@@ -1,4 +1,13 @@
+FROM amazoncorretto:25-alpine-jdk AS builder
+RUN apk add --no-cache maven
+WORKDIR /workspace
+
+COPY pom.xml ./
+COPY .mvn ./.mvn
+COPY src ./src
+RUN mvn -B -DskipTests package
+
 FROM amazoncorretto:25-alpine-jdk
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java","-jar","-Dspring.profiles.active=dev","/app.jar"]
+WORKDIR /
+COPY --from=builder /workspace/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","-Dspring.profiles.active=local","/app.jar"]
