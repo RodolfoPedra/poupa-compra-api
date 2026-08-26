@@ -2,7 +2,6 @@ package br.com.poupacompra.integracao.service.nota.impl;
 
 import java.util.List;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +20,6 @@ import br.com.poupacompra.integracao.service.nota.validation.NotaValidation;
 @Service
 public class NotaServiceImpl implements NotaService {
 
-  private final ModelMapper mapper;
-
   private final NotaRepository notaRepository;
 
   private final EstabelecimentoRepository estabelecimentoRepository;
@@ -35,8 +32,7 @@ public class NotaServiceImpl implements NotaService {
 
   private final NotaValidation notaValidation;
 
-  public NotaServiceImpl(ModelMapper mapper, NotaRepository notaRepository, EstabelecimentoRepository estabelecimentoRepository, GeralNotaConverter geralNotaConverter, EstabelecimentoConverter estabelecimentoConverter, ItensNotaConverter itensNotaConverter, NotaValidation notaValidation) {
-    this.mapper = mapper;
+  public NotaServiceImpl(NotaRepository notaRepository, EstabelecimentoRepository estabelecimentoRepository, GeralNotaConverter geralNotaConverter, EstabelecimentoConverter estabelecimentoConverter, ItensNotaConverter itensNotaConverter, NotaValidation notaValidation) {
     this.notaRepository = notaRepository;
     this.estabelecimentoRepository = estabelecimentoRepository;
     this.geralNotaConverter = geralNotaConverter;
