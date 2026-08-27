@@ -20,11 +20,13 @@ import br.com.poupacompra.integracao.service.nota.NotaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping(produces = "application/json")
+@RequestMapping(value = "/api/v1/notas", produces = "application/json")
 @Tag(name = "Nota Controller", description = "Endpoints para gerenciamento de notas fiscais")
+@SecurityRequirement(name = "bearerAuth")
 public class NotaController {
 
     private final NotaService notaService;
@@ -36,7 +38,7 @@ public class NotaController {
     }
 
     @Operation(summary = "Salvar Nota Fiscal", description = "Endpoint para salvar uma nova nota fiscal", method = "POST")
-    @PostMapping(value = "/salvar-nota", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Nota salva com sucesso"),
             @ApiResponse(responseCode = "400", description = "Requisição inválida"),
@@ -51,7 +53,7 @@ public class NotaController {
     }
 
     @Operation(summary = "Listar Notas Fiscais", description = "Endpoint para listar todas as notas fiscais", method = "GET")
-    @GetMapping(value = "/listar-notas", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Notas listadas com sucesso"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")

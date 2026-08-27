@@ -2,6 +2,7 @@ package br.com.poupacompra.integracao.service.nota.impl;
 
 import java.util.List;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import br.com.poupacompra.integracao.model.nota.GeralNota;
 import br.com.poupacompra.integracao.model.nota.ItensNota;
 import br.com.poupacompra.integracao.repository.EstabelecimentoRepository;
 import br.com.poupacompra.integracao.repository.NotaRepository;
+import br.com.poupacompra.integracao.repository.UsuarioRepository;
 import br.com.poupacompra.integracao.service.nota.NotaService;
 import br.com.poupacompra.integracao.service.nota.validation.NotaValidation;
 
@@ -31,14 +33,16 @@ public class NotaServiceImpl implements NotaService {
   private final ItensNotaConverter itensNotaConverter;
 
   private final NotaValidation notaValidation;
+  private final UsuarioRepository usuarioRepository;
 
-  public NotaServiceImpl(NotaRepository notaRepository, EstabelecimentoRepository estabelecimentoRepository, GeralNotaConverter geralNotaConverter, EstabelecimentoConverter estabelecimentoConverter, ItensNotaConverter itensNotaConverter, NotaValidation notaValidation) {
+  public NotaServiceImpl(NotaRepository notaRepository, EstabelecimentoRepository estabelecimentoRepository, GeralNotaConverter geralNotaConverter, EstabelecimentoConverter estabelecimentoConverter, ItensNotaConverter itensNotaConverter, NotaValidation notaValidation, UsuarioRepository usuarioRepository) {
     this.notaRepository = notaRepository;
     this.estabelecimentoRepository = estabelecimentoRepository;
     this.geralNotaConverter = geralNotaConverter;
     this.estabelecimentoConverter = estabelecimentoConverter;
     this.itensNotaConverter = itensNotaConverter;
     this.notaValidation = notaValidation;
+    this.usuarioRepository = usuarioRepository;
   }
 
   @Override
@@ -48,6 +52,8 @@ public class NotaServiceImpl implements NotaService {
     notaValidation.validarNotaExistente(notaDTO.getNota().getChaveAcesso());
 
     GeralNota geralNota = geralNotaConverter.dtoToEntity(notaDTO.getNota());
+    geralNota.setUsuario(usuarioRepository.findByEmailIgnoreCase(SecurityContextHolder.getContext().getAuthentication().getName())
+      .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado")));
     Estabelecimento estabelecimento = estabelecimentoConverter.dtoToEntity(notaDTO.getEstabelecimento());
     List<ItensNota> itensNota =  itensNotaConverter.dtoToEntity(notaDTO.getItensNota());
 
@@ -67,7 +73,13 @@ public class NotaServiceImpl implements NotaService {
 
   @Override
   public List<GeralNota> listarNotas() {
-    return notaRepository.findAll();
+    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    var usuario = usuarioRepository.findByEmailIgnoreCase(authentication.getName())
+        .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado"));
+    if (authentication.getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+      return notaRepository.findAll();
+    }
+    return notaRepository.findByUsuarioId(usuario.getId());
   }
 
 }
