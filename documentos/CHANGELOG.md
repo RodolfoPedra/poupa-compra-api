@@ -12,3 +12,6 @@
 - Adicionados clients OAuth Google/Apple, validação OIDC por JWKS e vinculação por provider+subject.
 - Documentados os endpoints de autenticação, OAuth e notas no Swagger/OpenAPI com Bearer JWT.
 - Liberados os caminhos do Swagger UI e OpenAPI na cadeia de segurança sem autenticação.
+- Preparado o login Google no frontend com Google Identity Services e fluxo popup server-side.
+- Corrigida a desserialização da resposta Google que contém `access_token` além de `id_token`.
+- Corrigida a desserialização da resposta Google que também pode conter `refresh_token`.

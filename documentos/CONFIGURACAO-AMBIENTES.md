@@ -6,6 +6,9 @@
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 JWT_ACCESS_TOKEN_TTL=PT15M
 JWT_REFRESH_TOKEN_TTL=P30D
+GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=segredo-fornecido-apenas-ao-backend
+GOOGLE_REDIRECT_URI=postmessage
 ```
 
 O frontend Next.js fica em `poupa-compra-web` e o backend local usa a porta `8182`.
