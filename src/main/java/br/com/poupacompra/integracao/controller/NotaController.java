@@ -7,12 +7,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.poupacompra.integracao.common.converter.impl.GeralNotaConverter;
+import br.com.poupacompra.integracao.common.converter.impl.ItensNotaConverter;
+import br.com.poupacompra.integracao.dto.nota.ItensNotaDTO;
 import br.com.poupacompra.integracao.dto.nota.NotaCompletaDTO;
 import br.com.poupacompra.integracao.dto.nota.NotaDTO;
 import br.com.poupacompra.integracao.model.nota.GeralNota;
@@ -31,10 +34,13 @@ public class NotaController {
 
     private final NotaService notaService;
     private final GeralNotaConverter geralNotaConverter;
+    private final ItensNotaConverter itensNotaConverter;
 
-    public NotaController(@Autowired NotaService notaService, @Autowired GeralNotaConverter geralNotaConverter) {
+    public NotaController(@Autowired NotaService notaService, @Autowired GeralNotaConverter geralNotaConverter,
+            @Autowired ItensNotaConverter itensNotaConverter) {
         this.notaService = notaService;
         this.geralNotaConverter = geralNotaConverter;
+        this.itensNotaConverter = itensNotaConverter;
     }
 
     @Operation(summary = "Salvar Nota Fiscal", description = "Endpoint para salvar uma nova nota fiscal", method = "POST")
@@ -64,5 +70,19 @@ public class NotaController {
                 .map(geralNotaConverter::entityToDto)
                 .toList();
         return ResponseEntity.ok(notasDTO);
+    }
+
+    @Operation(summary = "Listar Itens da Nota", description = "Endpoint para listar os itens vinculados a uma nota fiscal", method = "GET")
+    @GetMapping("/{id}/itens")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Itens listados com sucesso"),
+            @ApiResponse(responseCode = "403", description = "A nota pertence a outro usuário"),
+            @ApiResponse(responseCode = "404", description = "Nota não encontrada")
+    })
+    public ResponseEntity<List<ItensNotaDTO>> listarItensDaNota(@PathVariable Long id) {
+        List<ItensNotaDTO> itensDTO = notaService.listarItensDaNota(id).stream()
+                .map(itensNotaConverter::entityToDto)
+                .toList();
+        return ResponseEntity.ok(itensDTO);
     }
 }

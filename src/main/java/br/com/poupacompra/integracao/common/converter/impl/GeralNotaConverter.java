@@ -23,6 +23,7 @@ public class GeralNotaConverter implements GenericConverter<NotaDTO, GeralNota> 
     @Override
     public NotaDTO entityToDto(GeralNota entity) {
         return NotaDTO.builder()
+            .id(entity.getId())
             .quantidadeItens(entity.getQuantidadeItens())
             .valorTotal(entity.getValorTotal())
             .usuario(entity.getUsuario().getId())
