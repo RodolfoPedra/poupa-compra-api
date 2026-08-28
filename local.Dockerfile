@@ -8,6 +8,7 @@ COPY src ./src
 RUN mvn -B -DskipTests package
 
 FROM amazoncorretto:25-alpine-jdk
+
 WORKDIR /
 COPY --from=builder /workspace/target/*.jar app.jar
 ENTRYPOINT ["java","-jar","-Dspring.profiles.active=local","/app.jar"]

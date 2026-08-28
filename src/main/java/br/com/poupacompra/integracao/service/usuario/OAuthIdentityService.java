@@ -34,12 +34,14 @@ public class OAuthIdentityService {
     private final JwtDecoder appleDecoder;
     private final String googleClientId;
     private final String appleClientId;
+    private final String googleRedirectUri;
 
     @Autowired
     public OAuthIdentityService(UsuarioProviderRepository providerRepository, UsuarioRepository usuarioRepository,
             AuthService authService, GoogleOAuthClient googleClient, AppleOAuthClient appleClient,
             @Value("${security.oauth.google.client-id:}") String googleClientId,
-            @Value("${security.oauth.apple.client-id:}") String appleClientId) {
+            @Value("${security.oauth.apple.client-id:}") String appleClientId,
+            @Value("${security.oauth.google.redirect-uri:postmessage}") String googleRedirectUri) {
         this.providerRepository = providerRepository;
         this.usuarioRepository = usuarioRepository;
         this.authService = authService;
@@ -47,6 +49,7 @@ public class OAuthIdentityService {
         this.appleClient = appleClient;
         this.googleClientId = googleClientId;
         this.appleClientId = appleClientId;
+        this.googleRedirectUri = googleRedirectUri;
         this.googleDecoder = decoder("https://accounts.google.com", "https://www.googleapis.com/oauth2/v3/certs", googleClientId);
         this.appleDecoder = decoder("https://appleid.apple.com", "https://appleid.apple.com/auth/keys", appleClientId);
     }
@@ -63,16 +66,20 @@ public class OAuthIdentityService {
         this.appleDecoder = appleDecoder;
         this.googleClientId = googleClientId;
         this.appleClientId = appleClientId;
+        this.googleRedirectUri = "postmessage";
     }
 
     @Transactional
-    public AuthResponse autenticar(AuthProvider provider, String authorizationCode, String redirectUri) {
+    public AuthResponse autenticar(AuthProvider provider, String authorizationCode, String redirectUri, String codeVerifier) {
         OAuthProviderClient client = provider == AuthProvider.GOOGLE ? googleClient : appleClient;
         String clientId = provider == AuthProvider.GOOGLE ? googleClientId : appleClientId;
         if (clientId.isBlank()) {
             throw new TokenInvalidoException("OAuth " + provider + " não configurado");
         }
-        Jwt identity = decode(provider, client.exchangeCode(authorizationCode, redirectUri).idToken());
+        if (provider == AuthProvider.GOOGLE && !googleRedirectUri.equals(redirectUri)) {
+            throw new TokenInvalidoException("redirectUri OAuth Google não autorizado");
+        }
+        Jwt identity = decode(provider, client.exchangeCode(authorizationCode, redirectUri, codeVerifier).idToken());
         String subject = identity.getSubject();
         String email = identity.getClaimAsString("email");
         if (subject == null || email == null || email.isBlank()) {

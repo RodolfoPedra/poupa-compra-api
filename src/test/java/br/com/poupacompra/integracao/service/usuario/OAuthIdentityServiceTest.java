@@ -39,14 +39,14 @@ class OAuthIdentityServiceTest {
     @Test
     void deveEmitirTokensParaIdentidadeJaVinculada() {
         Usuario usuario = usuario("existente@example.com");
-        when(googleClient.exchangeCode("code", "http://localhost/callback")).thenReturn(new OAuthTokenResponse("id-token"));
+        when(googleClient.exchangeCode("code", "postmessage", null)).thenReturn(new OAuthTokenResponse("id-token"));
         when(googleDecoder.decode("id-token")).thenReturn(jwt("subject-1", "existente@example.com", "Pessoa"));
         when(providerRepository.findByProviderAndSubject(AuthProvider.GOOGLE, "subject-1"))
                 .thenReturn(Optional.of(new UsuarioProvider(usuario, AuthProvider.GOOGLE, "subject-1", usuario.getEmail())));
         AuthResponse response = new AuthResponse("access", "refresh", null);
         when(authService.loginSocial(usuario)).thenReturn(response);
 
-        AuthResponse result = service.autenticar(AuthProvider.GOOGLE, "code", "http://localhost/callback");
+        AuthResponse result = service.autenticar(AuthProvider.GOOGLE, "code", "postmessage", null);
 
         org.assertj.core.api.Assertions.assertThat(result).isSameAs(response);
         verify(authService).loginSocial(usuario);
@@ -54,25 +54,25 @@ class OAuthIdentityServiceTest {
 
     @Test
     void deveExigirVinculacaoExplicitaQuandoEmailJaExiste() {
-        when(googleClient.exchangeCode(any(), any())).thenReturn(new OAuthTokenResponse("id-token"));
+        when(googleClient.exchangeCode(any(), any(), any())).thenReturn(new OAuthTokenResponse("id-token"));
         when(googleDecoder.decode("id-token")).thenReturn(jwt("subject-1", "existente@example.com", "Pessoa"));
         when(providerRepository.findByProviderAndSubject(AuthProvider.GOOGLE, "subject-1")).thenReturn(Optional.empty());
         when(usuarioRepository.existsByEmailIgnoreCase("existente@example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> service.autenticar(AuthProvider.GOOGLE, "code", "callback"))
+        assertThatThrownBy(() -> service.autenticar(AuthProvider.GOOGLE, "code", "postmessage", null))
                 .isInstanceOf(EmailJaCadastradoException.class);
     }
 
     @Test
     void deveCriarUsuarioVerificadoQuandoIdentidadeAindaNaoExiste() {
-        when(appleClient.exchangeCode("code", "callback")).thenReturn(new OAuthTokenResponse("id-token"));
+        when(appleClient.exchangeCode("code", "callback", null)).thenReturn(new OAuthTokenResponse("id-token"));
         when(appleDecoder.decode("id-token")).thenReturn(jwt("apple-sub", "novo@example.com", "Nova Pessoa"));
         when(providerRepository.findByProviderAndSubject(AuthProvider.APPLE, "apple-sub")).thenReturn(Optional.empty());
         when(usuarioRepository.existsByEmailIgnoreCase("novo@example.com")).thenReturn(false);
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(authService.loginSocial(any(Usuario.class))).thenReturn(new AuthResponse("access", "refresh", null));
 
-        service.autenticar(AuthProvider.APPLE, "code", "callback");
+        service.autenticar(AuthProvider.APPLE, "code", "callback", null);
 
         verify(usuarioRepository).save(any(Usuario.class));
         verify(providerRepository).save(any(UsuarioProvider.class));

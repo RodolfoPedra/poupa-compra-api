@@ -7,6 +7,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import br.com.poupacompra.integracao.common.exception.TokenInvalidoException;
@@ -26,7 +27,7 @@ public class GoogleOAuthClient implements OAuthProviderClient {
     }
 
     @Override
-    public OAuthTokenResponse exchangeCode(String authorizationCode, String redirectUri) {
+    public OAuthTokenResponse exchangeCode(String authorizationCode, String redirectUri, String codeVerifier) {
         if (clientId.isBlank() || clientSecret.isBlank()) {
             throw new TokenInvalidoException("OAuth Google não configurado");
         }
@@ -36,6 +37,9 @@ public class GoogleOAuthClient implements OAuthProviderClient {
         form.add("client_secret", clientSecret);
         form.add("redirect_uri", redirectUri);
         form.add("grant_type", "authorization_code");
+        if (codeVerifier != null && !codeVerifier.isBlank()) {
+            form.add("code_verifier", codeVerifier);
+        }
         GoogleTokenResponse response = restClient.post().uri("/token").contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(form)
                 .retrieve().body(GoogleTokenResponse.class);
@@ -45,6 +49,13 @@ public class GoogleOAuthClient implements OAuthProviderClient {
         return new OAuthTokenResponse(response.idToken());
     }
 
-    private record GoogleTokenResponse(@JsonProperty("id_token") String idToken) {
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        private record GoogleTokenResponse(
+            @JsonProperty("id_token") String idToken,
+            @JsonProperty("access_token") String accessToken,
+            @JsonProperty("refresh_token") String refreshToken,
+            @JsonProperty("expires_in") Long expiresIn,
+            @JsonProperty("scope") String scope,
+            @JsonProperty("token_type") String tokenType) {
     }
 }

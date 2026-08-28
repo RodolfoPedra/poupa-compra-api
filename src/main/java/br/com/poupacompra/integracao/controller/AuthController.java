@@ -71,7 +71,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Código ou identidade Google inválida")
         })
     public AuthResponse google(@Valid @RequestBody OAuthLoginRequest request) {
-        return oauthIdentityService.autenticar(AuthProvider.GOOGLE, request.authorizationCode(), request.redirectUri());
+        return oauthIdentityService.autenticar(AuthProvider.GOOGLE, request.authorizationCode(), request.redirectUri(), request.codeVerifier());
     }
 
     @PostMapping("/oauth/apple")
@@ -81,7 +81,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Código ou identidade Apple inválida")
         })
     public AuthResponse apple(@Valid @RequestBody OAuthLoginRequest request) {
-        return oauthIdentityService.autenticar(AuthProvider.APPLE, request.authorizationCode(), request.redirectUri());
+        return oauthIdentityService.autenticar(AuthProvider.APPLE, request.authorizationCode(), request.redirectUri(), request.codeVerifier());
     }
 
     @PostMapping("/verify-email")

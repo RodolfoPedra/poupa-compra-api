@@ -7,6 +7,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import br.com.poupacompra.integracao.common.exception.TokenInvalidoException;
@@ -26,7 +27,7 @@ public class AppleOAuthClient implements OAuthProviderClient {
     }
 
     @Override
-    public OAuthTokenResponse exchangeCode(String authorizationCode, String redirectUri) {
+    public OAuthTokenResponse exchangeCode(String authorizationCode, String redirectUri, String codeVerifier) {
         if (clientId.isBlank() || clientSecret.isBlank()) {
             throw new TokenInvalidoException("OAuth Apple não configurado");
         }
@@ -36,6 +37,9 @@ public class AppleOAuthClient implements OAuthProviderClient {
         form.add("client_secret", clientSecret);
         form.add("redirect_uri", redirectUri);
         form.add("grant_type", "authorization_code");
+        if (codeVerifier != null && !codeVerifier.isBlank()) {
+            form.add("code_verifier", codeVerifier);
+        }
         AppleTokenResponse response = restClient.post().uri("/auth/token").contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(form)
                 .retrieve().body(AppleTokenResponse.class);
@@ -45,6 +49,7 @@ public class AppleOAuthClient implements OAuthProviderClient {
         return new OAuthTokenResponse(response.idToken());
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record AppleTokenResponse(@JsonProperty("id_token") String idToken) {
     }
 }
