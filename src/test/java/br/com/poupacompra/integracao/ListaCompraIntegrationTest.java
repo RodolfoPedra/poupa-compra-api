@@ -3,6 +3,8 @@ package br.com.poupacompra.integracao;
 import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import br.com.poupacompra.integracao.dto.listacompra.ItemListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResponse;
+import br.com.poupacompra.integracao.dto.listacompra.RascunhoListaNotasResponse;
 import br.com.poupacompra.integracao.dto.usuario.AuthResponse;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
 import br.com.poupacompra.integracao.repository.EmailVerificationTokenRepository;
@@ -201,6 +204,51 @@ class ListaCompraIntegrationTest {
     }
 
         @Test
+        void deveGerarRascunhoPaginadoEDeduplicadoAPartirDeNotas() {
+        String token = autenticar("usuario1@poupacompra.com");
+        Long usuarioId = usuarioRepository.findByEmailIgnoreCase("usuario1@poupacompra.com").orElseThrow().getId();
+        Long estabelecimentoId = criarEstabelecimento("Mercado Central", "11111111111111");
+        Long notaAntigaId = criarNota(usuarioId, estabelecimentoId, "nota-antiga", 3);
+        criarItemNota(notaAntigaId, 10L, "Descrição antiga");
+        criarItemNota(notaAntigaId, 10L, "Descrição antiga corrigida");
+        criarItemNota(notaAntigaId, 20L, "Produto B");
+        Long notaNovaId = criarNota(usuarioId, estabelecimentoId, "nota-nova", 2);
+        criarItemNota(notaNovaId, 10L, "Descrição mais recente");
+        criarItemNota(notaNovaId, 30L, "Produto C");
+
+        ResponseEntity<String> estabelecimentos = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/estabelecimentos", HttpMethod.GET, autorizado(token), String.class);
+        assertThat(estabelecimentos.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(estabelecimentos.getBody()).contains("Mercado Central", "11111111111111");
+
+        ResponseEntity<String> pagina = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/estabelecimentos/" + estabelecimentoId + "/notas?pagina=0&tamanho=1",
+            HttpMethod.GET, autorizado(token), String.class);
+        assertThat(pagina.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(pagina.getBody()).contains("\"totalElementos\":2", "\"totalPaginas\":2",
+            "\"id\":" + notaNovaId).doesNotContain("\"id\":" + notaAntigaId);
+
+        ResponseEntity<RascunhoListaNotasResponse> response = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/rascunho", HttpMethod.POST,
+            json(token, "{\"notaIds\":[" + notaAntigaId + "," + notaNovaId + "]}"),
+            RascunhoListaNotasResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().nome()).isEqualTo("Compras - Mercado Central - "
+            + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        assertThat(response.getBody().itens()).extracting(item -> item.descricao())
+            .containsExactly("Produto C", "Descrição mais recente", "Produto B");
+        assertThat(response.getBody().itens()).allSatisfy(item -> {
+            assertThat(item.produtoId()).isNull();
+            assertThat(item.quantidade()).isNull();
+            assertThat(item.unidade()).isNull();
+            assertThat(item.selecionado()).isFalse();
+        });
+        assertThat(listaRepository.count()).isZero();
+        }
+
+        @Test
         void deveRecusarSalvamentoComVersaoDesatualizada() {
         String token = autenticar("usuario1@poupacompra.com");
         ListaCompraResponse lista = criarLista(token, "Feira");
@@ -256,6 +304,29 @@ class ListaCompraIntegrationTest {
         Usuario usuario = new Usuario(nome, email, passwordEncoder.encode(senha));
         usuario.setEmailVerificado(true);
         usuarioRepository.save(usuario);
+    }
+
+    private Long criarEstabelecimento(String nome, String cpfCnpj) {
+        jdbcTemplate.update("INSERT INTO estabelecimento (nome_estabelecimento, cpf_cnpj, endereco) VALUES (?, ?, ?)",
+                nome, cpfCnpj, "Rua de Teste");
+        return jdbcTemplate.queryForObject("SELECT id FROM estabelecimento WHERE cpf_cnpj = ?", Long.class, cpfCnpj);
+    }
+
+    private Long criarNota(Long usuarioId, Long estabelecimentoId, String chave, int quantidadeItens) {
+        jdbcTemplate.update("""
+                INSERT INTO geral_nota
+                    (quantidade_itens, valor_total, usuario_id, uf_cfe, url_cfe, chave_acesso, estabelecimento_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, quantidadeItens, 10.0, usuarioId, "SP", "https://nota/" + chave, chave, estabelecimentoId);
+        return jdbcTemplate.queryForObject("SELECT id FROM geral_nota WHERE chave_acesso = ?", Long.class, chave);
+    }
+
+    private void criarItemNota(Long notaId, Long codigoItem, String descricao) {
+        jdbcTemplate.update("""
+                INSERT INTO itens_nota
+                    (descricao, quantidade, tipo_unidade, valor_unitario, valor_total, nota_id, codigo_item)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, descricao, 1.0, "UNID", 10.0, 10.0, notaId, codigoItem);
     }
 
     private String autenticar(String email) {
