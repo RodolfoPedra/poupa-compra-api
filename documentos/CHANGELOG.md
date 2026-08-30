@@ -4,6 +4,9 @@
 
 - Quantidade e unidade dos itens de listas de compras passaram a ser opcionais e independentes no frontend, API e banco de dados.
 - Adicionada a migration `V11` para remover a obrigatoriedade dessas colunas sem alterar migrations já aplicadas.
+- Tornado obrigatório o `codigo_item` dos itens de notas fiscais na API e no banco de dados.
+- Adicionada a migration `V12`, que remove o valor padrão `0` de `codigo_item` e impede valores nulos.
+- Corrigido o build local para não depender de um diretório `.mvn` inexistente.
 
 ## 2026-08-29
 
