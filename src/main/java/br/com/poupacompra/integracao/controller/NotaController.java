@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping(value = "/api/v1/notas", produces = "application/json")
@@ -50,7 +51,7 @@ public class NotaController {
             @ApiResponse(responseCode = "400", description = "Requisição inválida"),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    public ResponseEntity<NotaDTO> salvarNota(@RequestBody NotaCompletaDTO nota) {
+        public ResponseEntity<NotaDTO> salvarNota(@Valid @RequestBody NotaCompletaDTO nota) {
 
         GeralNota geralNota = notaService.salvarNota(nota);
         NotaDTO notaDTO = geralNotaConverter.entityToDto(geralNota);

@@ -123,6 +123,26 @@ public class NotaIntegrationTest {
     }
 
     @Test
+    public void deveRetornarBadRequestQuandoCodigoItemNaoForInformado() throws Exception {
+        ClassPathResource resource = new ClassPathResource("payload-nota.json");
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        ((ObjectNode) root.withArray("itensNota").get(0)).remove("codigoItem");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(autenticar("teste@poupacompra.com", "senha-segura"));
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "/api/v1/notas",
+                new HttpEntity<>(mapper.writeValueAsString(root), headers),
+                String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(0, notaRepository.count());
+    }
+
+    @Test
     public void deveListarItensDaNotaCadastrada() throws Exception {
         String bearerToken = autenticar("teste@poupacompra.com", "senha-segura");
         Long notaId = cadastrarNotaERetornarId(bearerToken);
