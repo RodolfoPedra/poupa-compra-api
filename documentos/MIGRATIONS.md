@@ -21,6 +21,10 @@ As migrations são executadas nesta ordem, conforme a versão do arquivo:
 5. `V5__relate_geral_nota_to_usuario.sql`: adiciona `usuario_id`, a foreign key para `usuario` e o índice de consulta.
 6. `V6__create_password_reset_token.sql`: cria tokens temporários para recuperação de senha.
 7. `V7__create_usuario_provider.sql`: cria as associações Google/Apple por `provider` e `subject`.
+8. `V8__create_catalogo_produtos.sql`: cria categorias, produtos e índices GIN com `pg_trgm`.
+9. `V9__seed_catalogo_produtos.sql`: carrega as categorias e produtos do catálogo inicial.
+10. `V10__create_listas_compras.sql`: cria listas, itens, relacionamentos, constraints e índices.
+11. `V11__allow_null_item_quantity_and_unit.sql`: torna quantidade e unidade opcionais nos itens das listas.
 
 A numeração é importante porque o Flyway executa as migrations pela ordem crescente da versão.
 
@@ -73,3 +77,17 @@ Depois, reinicie a aplicação com um perfil que tenha o Flyway habilitado. A no
 - A migration deve ser revisada antes da execução, principalmente quando alterar ou remover dados.
 - O banco deve estar acessível no momento do startup; caso contrário, a aplicação não inicia.
 - Em bancos que já possuem tabelas criadas fora do Flyway, é necessário definir uma estratégia de baseline antes de habilitar as migrations.
+- A migration `V8` requer permissão para executar `CREATE EXTENSION IF NOT EXISTS pg_trgm`. Em ambientes gerenciados, a extensão deve ser liberada ou provisionada previamente.
+
+## Catálogo e listas de compras
+
+O catálogo inicial possui 32 categorias e 435 produtos. A busca por nome de produto ou categoria usa `LOWER` e índices GIN com operadores trigram, adequados para termos no meio do texto.
+
+As listas são privadas e pertencem a um usuário. O banco garante:
+
+- nome de lista único por usuário, sem diferenciar maiúsculas e minúsculas;
+- no máximo uma ocorrência do mesmo produto do catálogo por lista;
+- quantidade e unidade opcionais e independentes;
+- quantidade positiva, com até três casas decimais, quando informada;
+- quantidade inteira quando quantidade e unidade `UNIDADE` forem informadas;
+- remoção dos itens quando uma lista ou usuário for excluído.
