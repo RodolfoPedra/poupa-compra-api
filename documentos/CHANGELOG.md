@@ -7,6 +7,10 @@
 - Tornado obrigatório o `codigo_item` dos itens de notas fiscais na API e no banco de dados.
 - Adicionada a migration `V12`, que remove o valor padrão `0` de `codigo_item` e impede valores nulos.
 - Corrigido o build local para não depender de um diretório `.mvn` inexistente.
+- Adicionada a geração de rascunhos de listas de compras a partir de uma a cinco NFC-e do mesmo estabelecimento.
+- Adicionadas seleção paginada de notas próprias, deduplicação por `codigo_item` e preferência pela descrição da nota mais recente.
+- Adicionada a migration `V13` com índices para consulta de notas por usuário/estabelecimento e leitura ordenada dos itens.
+- Integrada à tela de listas a seleção de estabelecimento e notas, mantendo o rascunho local até o salvamento explícito.
 
 ## 2026-08-29
 
