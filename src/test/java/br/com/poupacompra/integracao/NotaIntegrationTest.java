@@ -29,6 +29,8 @@ import br.com.poupacompra.integracao.dto.nota.NotaDTO;
 import br.com.poupacompra.integracao.dto.usuario.AuthResponse;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
 import br.com.poupacompra.integracao.repository.EmailVerificationTokenRepository;
+import br.com.poupacompra.integracao.repository.ItemListaCompraRepository;
+import br.com.poupacompra.integracao.repository.ListaCompraRepository;
 import br.com.poupacompra.integracao.repository.NotaRepository;
 import br.com.poupacompra.integracao.repository.PasswordResetTokenRepository;
 import br.com.poupacompra.integracao.repository.RefreshTokenRepository;
@@ -44,6 +46,12 @@ public class NotaIntegrationTest {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ItemListaCompraRepository itemListaCompraRepository;
+
+    @Autowired
+    private ListaCompraRepository listaCompraRepository;
 
     @Autowired
     private NotaRepository notaRepository;
@@ -66,6 +74,8 @@ public class NotaIntegrationTest {
     @BeforeEach
     void prepararUsuario() {
         // ordem necessária: filhos antes do usuário, pois o schema de teste não possui ON DELETE CASCADE.
+        itemListaCompraRepository.deleteAll();
+        listaCompraRepository.deleteAll();
         notaRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         emailVerificationTokenRepository.deleteAll();
