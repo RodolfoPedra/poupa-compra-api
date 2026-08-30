@@ -3,7 +3,6 @@ RUN apk add --no-cache maven
 WORKDIR /workspace
 
 COPY pom.xml ./
-COPY .mvn ./.mvn
 COPY src ./src
 RUN mvn -B -DskipTests package
 
