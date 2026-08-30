@@ -3,5 +3,8 @@ target
 .idea
 .vscode
 .mvn
-auth-data
 poupa-compra-web
+auth-data
+.env
+.env.*
+!.env.example

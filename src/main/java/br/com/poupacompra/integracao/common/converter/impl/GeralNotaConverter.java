@@ -14,7 +14,6 @@ public class GeralNotaConverter implements GenericConverter<NotaDTO, GeralNota> 
         return GeralNota.builder()
             .quantidadeItens(dto.getQuantidadeItens())
             .valorTotal(dto.getValorTotal())
-            .usuario(dto.getUsuario())
             .ufCfe(dto.getUfCfe())
             .urlCfe(dto.getUrlCfe())
             .chaveAcesso(dto.getChaveAcesso())
@@ -24,9 +23,10 @@ public class GeralNotaConverter implements GenericConverter<NotaDTO, GeralNota> 
     @Override
     public NotaDTO entityToDto(GeralNota entity) {
         return NotaDTO.builder()
+            .id(entity.getId())
             .quantidadeItens(entity.getQuantidadeItens())
             .valorTotal(entity.getValorTotal())
-            .usuario(entity.getUsuario())
+            .usuario(entity.getUsuario().getId())
             .ufCfe(entity.getUfCfe())
             .urlCfe(entity.getUrlCfe())
             .chaveAcesso(entity.getChaveAcesso())

@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NotaDTO {
 
+    private Long id;
     private Integer quantidadeItens;
     private float valorTotal;
     private Long usuario;

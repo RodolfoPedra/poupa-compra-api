@@ -3,6 +3,7 @@ package br.com.poupacompra.integracao.model.nota;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.poupacompra.integracao.model.usuario.Usuario;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,8 +45,9 @@ public class GeralNota {
     private Float valorTotal;
 
     @NotNull
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuario;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id", nullable = false)
+    private Usuario usuario;
 
     @Column(name = "numero_cfe")
     private Integer numeroCfe;

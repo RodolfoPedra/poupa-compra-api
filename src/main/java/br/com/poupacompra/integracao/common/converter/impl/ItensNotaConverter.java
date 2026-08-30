@@ -15,6 +15,7 @@ public class ItensNotaConverter implements ListGenericConverter<ItensNotaDTO, It
             .descricao(dto.getDescricao())
             .quantidade(dto.getQuantidade())
             .tipoUnidade(dto.getTipoUnidade())
+            .codigoItem(dto.getCodigoItem())
             .valorUnitario(dto.getValorUnitario())
             .valorTotal(dto.getValorTotal())
             .build();
@@ -26,6 +27,7 @@ public class ItensNotaConverter implements ListGenericConverter<ItensNotaDTO, It
             .descricao(entity.getDescricao())
             .quantidade(entity.getQuantidade())
             .tipoUnidade(entity.getTipoUnidade())
+            .codigoItem(entity.getCodigoItem())
             .valorUnitario(entity.getValorUnitario())
             .valorTotal(entity.getValorTotal())
             .build();
