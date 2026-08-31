@@ -120,6 +120,7 @@ public class NotaIntegrationTest {
         ResponseEntity<String> response = restTemplate.postForEntity("/api/v1/notas", request, String.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(0, listaCompraRepository.count());
     }
 
     @Test

@@ -26,6 +26,8 @@ As migrations são executadas nesta ordem, conforme a versão do arquivo:
 10. `V10__create_listas_compras.sql`: cria listas, itens, relacionamentos, constraints e índices.
 11. `V11__allow_null_item_quantity_and_unit.sql`: torna quantidade e unidade opcionais nos itens das listas.
 12. `V12__require_codigo_item_on_itens_nota.sql`: remove o valor padrão `0` e torna o código do item da nota obrigatório.
+13. `V13__index_notas_for_shopping_list_drafts.sql`: otimiza a seleção de notas e itens para geração de rascunhos.
+14. `V14__link_shopping_list_to_invoice.sql`: adiciona o vínculo opcional e exclusivo entre lista de compras e nota fiscal.
 
 A numeração é importante porque o Flyway executa as migrations pela ordem crescente da versão.
 

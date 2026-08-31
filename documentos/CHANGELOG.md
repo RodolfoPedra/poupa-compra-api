@@ -11,6 +11,10 @@
 - Adicionadas seleção paginada de notas próprias, deduplicação por `codigo_item` e preferência pela descrição da nota mais recente.
 - Adicionada a migration `V13` com índices para consulta de notas por usuário/estabelecimento e leitura ordenada dos itens.
 - Integrada à tela de listas a seleção de estabelecimento e notas, mantendo o rascunho local até o salvamento explícito.
+- Adicionado vínculo opcional e exclusivo entre lista de compras e NFC-e, com suporte a troca e desvínculo.
+- Adicionadas seleção paginada de notas disponíveis e criação transacional de NFC-e vinculada à lista.
+- Mantido o cadastro direto de NFC-e sem associação automática a listas de compras.
+- Adicionada a migration `V14` com chave estrangeira e índice único parcial para impedir o reuso da mesma nota.
 
 ## 2026-08-29
 

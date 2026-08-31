@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.poupacompra.integracao.dto.listacompra.AtualizarVinculoNotaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.CadastrarNotaVinculadaRequest;
 import br.com.poupacompra.integracao.dto.listacompra.EstabelecimentoNotaResponse;
 import br.com.poupacompra.integracao.dto.listacompra.GerarRascunhoListaRequest;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResponse;
@@ -91,6 +94,27 @@ public class ListaCompraController {
     public RascunhoListaNotasResponse gerarRascunho(Authentication authentication,
             @Valid @RequestBody GerarRascunhoListaRequest request) {
         return origemNotaService.gerarRascunho(authentication.getName(), request.notaIds());
+    }
+
+    @GetMapping("/{listaId}/notas-disponiveis")
+    public PaginaResponse<NotaOrigemListaResponse> listarNotasDisponiveis(Authentication authentication,
+            @PathVariable Long listaId,
+            @RequestParam(defaultValue = "0") @Min(0) int pagina,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int tamanho) {
+        return service.listarNotasDisponiveis(authentication.getName(), listaId, pagina, tamanho);
+    }
+
+    @PatchMapping("/{listaId}/nota")
+    public ListaCompraResponse atualizarNota(Authentication authentication, @PathVariable Long listaId,
+            @Valid @RequestBody AtualizarVinculoNotaRequest request) {
+        return service.atualizarNota(authentication.getName(), listaId, request.notaId(), request.updatedAt());
+    }
+
+    @PostMapping("/{listaId}/nota")
+    public ResponseEntity<ListaCompraResponse> cadastrarNotaVinculada(Authentication authentication,
+            @PathVariable Long listaId, @Valid @RequestBody CadastrarNotaVinculadaRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrarNotaVinculada(
+                authentication.getName(), listaId, request.updatedAt(), request.nota()));
     }
 
 }

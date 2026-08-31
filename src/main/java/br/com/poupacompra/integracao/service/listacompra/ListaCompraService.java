@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +23,11 @@ import br.com.poupacompra.integracao.common.exception.RegraNegocioException;
 import br.com.poupacompra.integracao.dto.listacompra.ItemListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResumoResponse;
+import br.com.poupacompra.integracao.dto.listacompra.NotaOrigemListaResponse;
+import br.com.poupacompra.integracao.dto.listacompra.PaginaResponse;
 import br.com.poupacompra.integracao.dto.listacompra.SalvarItemListaCompraRequest;
 import br.com.poupacompra.integracao.dto.listacompra.SalvarListaCompraRequest;
+import br.com.poupacompra.integracao.dto.nota.NotaCompletaDTO;
 import br.com.poupacompra.integracao.model.listacompra.ItemListaCompra;
 import br.com.poupacompra.integracao.model.listacompra.ListaCompra;
 import br.com.poupacompra.integracao.model.listacompra.Produto;
@@ -31,8 +35,10 @@ import br.com.poupacompra.integracao.model.listacompra.UnidadeMedida;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
 import br.com.poupacompra.integracao.repository.ItemListaCompraRepository;
 import br.com.poupacompra.integracao.repository.ListaCompraRepository;
+import br.com.poupacompra.integracao.repository.NotaRepository;
 import br.com.poupacompra.integracao.repository.ProdutoRepository;
 import br.com.poupacompra.integracao.repository.UsuarioRepository;
+import br.com.poupacompra.integracao.service.nota.NotaService;
 
 @Service
 public class ListaCompraService {
@@ -40,13 +46,18 @@ public class ListaCompraService {
     private final ItemListaCompraRepository itemRepository;
     private final ProdutoRepository produtoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final NotaRepository notaRepository;
+    private final NotaService notaService;
 
     public ListaCompraService(ListaCompraRepository listaRepository, ItemListaCompraRepository itemRepository,
-            ProdutoRepository produtoRepository, UsuarioRepository usuarioRepository) {
+            ProdutoRepository produtoRepository, UsuarioRepository usuarioRepository, NotaRepository notaRepository,
+            NotaService notaService) {
         this.listaRepository = listaRepository;
         this.itemRepository = itemRepository;
         this.produtoRepository = produtoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.notaRepository = notaRepository;
+        this.notaService = notaService;
     }
 
     @Transactional
@@ -132,6 +143,61 @@ public class ListaCompraService {
     @Transactional
     public void excluir(String email, Long listaId) {
         listaRepository.delete(Objects.requireNonNull(buscarListaDoUsuario(email, listaId)));
+    }
+
+    @Transactional(readOnly = true)
+    public PaginaResponse<NotaOrigemListaResponse> listarNotasDisponiveis(String email, Long listaId,
+            int pagina, int tamanho) {
+        Long usuarioId = buscarUsuario(email).getId();
+        if (!listaRepository.existsByIdAndUsuarioId(listaId, usuarioId)) {
+            throw new RecursoNaoEncontradoException("Lista de compras não encontrada");
+        }
+        return PaginaResponse.from(notaRepository
+                .listarDisponiveisParaLista(usuarioId, listaId, PageRequest.of(pagina, tamanho))
+                .map(NotaOrigemListaResponse::from));
+    }
+
+    @Transactional
+    public ListaCompraResponse atualizarNota(String email, Long listaId, Long notaId, Instant updatedAt) {
+        Usuario usuario = buscarUsuario(email);
+        ListaCompra lista = buscarListaParaAtualizacao(listaId, usuario.getId(), updatedAt);
+        if (notaId == null) {
+            lista.setNota(null);
+        } else {
+            var nota = notaRepository.findByIdAndUsuarioId(notaId, usuario.getId())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Nota fiscal não encontrada"));
+            if (listaRepository.existsByNotaIdAndIdNot(notaId, listaId)) {
+                throw new ConflitoException("A nota fiscal já está vinculada a outra lista");
+            }
+            lista.setNota(nota);
+        }
+        return salvarVinculo(lista);
+    }
+
+    @Transactional
+    public ListaCompraResponse cadastrarNotaVinculada(String email, Long listaId, Instant updatedAt,
+            NotaCompletaDTO notaRequest) {
+        Usuario usuario = buscarUsuario(email);
+        ListaCompra lista = buscarListaParaAtualizacao(listaId, usuario.getId(), updatedAt);
+        lista.setNota(notaService.salvarNota(notaRequest));
+        return salvarVinculo(lista);
+    }
+
+    private ListaCompra buscarListaParaAtualizacao(Long listaId, Long usuarioId, Instant updatedAt) {
+        ListaCompra lista = listaRepository.findByIdAndUsuarioIdForUpdate(listaId, usuarioId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Lista de compras não encontrada"));
+        validarVersao(updatedAt, lista.getUpdatedAt());
+        return lista;
+    }
+
+    private ListaCompraResponse salvarVinculo(ListaCompra lista) {
+        lista.touch();
+        try {
+            listaRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ConflitoException("A nota fiscal já está vinculada a outra lista");
+        }
+        return montarDetalhe(lista);
     }
 
     private ListaCompraResponse montarDetalhe(ListaCompra lista) {

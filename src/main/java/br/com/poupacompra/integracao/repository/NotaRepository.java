@@ -17,6 +17,8 @@ public interface NotaRepository extends JpaRepository<GeralNota, Long>{
 
   List<GeralNota> findByUsuarioId(Long usuarioId);
 
+  Optional<GeralNota> findByIdAndUsuarioId(Long id, Long usuarioId);
+
     @Query("""
       SELECT DISTINCT estabelecimento.id AS id,
          estabelecimento.nomeEstabelecimento AS nome,
@@ -51,5 +53,23 @@ public interface NotaRepository extends JpaRepository<GeralNota, Long>{
       """)
     List<NotaSelecionadaProjection> buscarSelecionadasDoUsuario(@Param("usuarioId") Long usuarioId,
       @Param("notaIds") List<Long> notaIds);
+
+    @Query(value = """
+      SELECT nota.id AS id, nota.numeroCfe AS numeroCfe, nota.dataHoraEmissao AS dataHoraEmissao,
+         nota.valorTotal AS valorTotal, nota.quantidadeItens AS quantidadeItens
+      FROM GeralNota nota
+      LEFT JOIN ListaCompra listaVinculada ON listaVinculada.nota = nota
+      WHERE nota.usuario.id = :usuarioId
+        AND (listaVinculada.id IS NULL OR listaVinculada.id = :listaId)
+      ORDER BY nota.id DESC
+      """, countQuery = """
+      SELECT COUNT(nota.id)
+      FROM GeralNota nota
+      LEFT JOIN ListaCompra listaVinculada ON listaVinculada.nota = nota
+      WHERE nota.usuario.id = :usuarioId
+        AND (listaVinculada.id IS NULL OR listaVinculada.id = :listaId)
+      """)
+    Page<NotaOrigemListaProjection> listarDisponiveisParaLista(@Param("usuarioId") Long usuarioId,
+      @Param("listaId") Long listaId, Pageable pageable);
 
 }
