@@ -3,6 +3,7 @@ package br.com.poupacompra.integracao.model.listacompra;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import br.com.poupacompra.integracao.model.nota.GeralNota;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +36,11 @@ public class ListaCompra {
     @Setter
     @Column(nullable = false, length = 120)
     private String nome;
+
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nota_id")
+    private GeralNota nota;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

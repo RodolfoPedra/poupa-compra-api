@@ -3,12 +3,15 @@ package br.com.poupacompra.integracao;
 import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -19,8 +22,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import br.com.poupacompra.integracao.dto.listacompra.ItemListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResponse;
+import br.com.poupacompra.integracao.dto.listacompra.RascunhoListaNotasResponse;
 import br.com.poupacompra.integracao.dto.usuario.AuthResponse;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
 import br.com.poupacompra.integracao.repository.EmailVerificationTokenRepository;
@@ -201,6 +208,51 @@ class ListaCompraIntegrationTest {
     }
 
         @Test
+        void deveGerarRascunhoPaginadoEDeduplicadoAPartirDeNotas() {
+        String token = autenticar("usuario1@poupacompra.com");
+        Long usuarioId = usuarioRepository.findByEmailIgnoreCase("usuario1@poupacompra.com").orElseThrow().getId();
+        Long estabelecimentoId = criarEstabelecimento("Mercado Central", "11111111111111");
+        Long notaAntigaId = criarNota(usuarioId, estabelecimentoId, "nota-antiga", 3);
+        criarItemNota(notaAntigaId, 10L, "Descrição antiga");
+        criarItemNota(notaAntigaId, 10L, "Descrição antiga corrigida");
+        criarItemNota(notaAntigaId, 20L, "Produto B");
+        Long notaNovaId = criarNota(usuarioId, estabelecimentoId, "nota-nova", 2);
+        criarItemNota(notaNovaId, 10L, "Descrição mais recente");
+        criarItemNota(notaNovaId, 30L, "Produto C");
+
+        ResponseEntity<String> estabelecimentos = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/estabelecimentos", HttpMethod.GET, autorizado(token), String.class);
+        assertThat(estabelecimentos.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(estabelecimentos.getBody()).contains("Mercado Central", "11111111111111");
+
+        ResponseEntity<String> pagina = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/estabelecimentos/" + estabelecimentoId + "/notas?pagina=0&tamanho=1",
+            HttpMethod.GET, autorizado(token), String.class);
+        assertThat(pagina.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(pagina.getBody()).contains("\"totalElementos\":2", "\"totalPaginas\":2",
+            "\"id\":" + notaNovaId).doesNotContain("\"id\":" + notaAntigaId);
+
+        ResponseEntity<RascunhoListaNotasResponse> response = restTemplate.exchange(
+            "/api/v1/listas/origem-notas/rascunho", HttpMethod.POST,
+            json(token, "{\"notaIds\":[" + notaAntigaId + "," + notaNovaId + "]}"),
+            RascunhoListaNotasResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().nome()).isEqualTo("Compras - Mercado Central - "
+            + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        assertThat(response.getBody().itens()).extracting(item -> item.descricao())
+            .containsExactly("Produto C", "Descrição mais recente", "Produto B");
+        assertThat(response.getBody().itens()).allSatisfy(item -> {
+            assertThat(item.produtoId()).isNull();
+            assertThat(item.quantidade()).isNull();
+            assertThat(item.unidade()).isNull();
+            assertThat(item.selecionado()).isFalse();
+        });
+        assertThat(listaRepository.count()).isZero();
+        }
+
+        @Test
         void deveRecusarSalvamentoComVersaoDesatualizada() {
         String token = autenticar("usuario1@poupacompra.com");
         ListaCompraResponse lista = criarLista(token, "Feira");
@@ -215,6 +267,94 @@ class ListaCompraIntegrationTest {
 
         assertThat(primeiraAtualizacao.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(segundaAtualizacao.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+
+        @Test
+        void deveVincularTrocarEDesvincularNotaComExclusividade() {
+        String token = autenticar("usuario1@poupacompra.com");
+        Long usuarioId = usuarioRepository.findByEmailIgnoreCase("usuario1@poupacompra.com").orElseThrow().getId();
+        Long estabelecimentoId = criarEstabelecimento("Mercado do vínculo", "22222222222222");
+        Long primeiraNotaId = criarNota(usuarioId, estabelecimentoId, "vinculo-1", 2);
+        Long segundaNotaId = criarNota(usuarioId, estabelecimentoId, "vinculo-2", 3);
+        ListaCompraResponse primeiraLista = criarLista(token, "Lista vinculada");
+        ListaCompraResponse segundaLista = criarLista(token, "Outra lista");
+
+        ResponseEntity<ListaCompraResponse> vinculo = restTemplate.exchange(
+            "/api/v1/listas/" + primeiraLista.id() + "/nota", HttpMethod.PATCH,
+            json(token, "{\"notaId\":" + primeiraNotaId + ",\"updatedAt\":\""
+                + primeiraLista.updatedAt() + "\"}"),
+            ListaCompraResponse.class);
+
+        assertThat(vinculo.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(vinculo.getBody()).isNotNull();
+        assertThat(vinculo.getBody().nota().id()).isEqualTo(primeiraNotaId);
+
+        ResponseEntity<String> versaoDesatualizada = restTemplate.exchange(
+            "/api/v1/listas/" + primeiraLista.id() + "/nota", HttpMethod.PATCH,
+            json(token, "{\"notaId\":" + segundaNotaId + ",\"updatedAt\":\""
+                + primeiraLista.updatedAt() + "\"}"),
+            String.class);
+        assertThat(versaoDesatualizada.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+        ResponseEntity<String> disponiveis = restTemplate.exchange(
+            "/api/v1/listas/" + segundaLista.id() + "/notas-disponiveis?pagina=0&tamanho=10",
+            HttpMethod.GET, autorizado(token), String.class);
+        assertThat(disponiveis.getBody()).contains("\"id\":" + segundaNotaId)
+            .doesNotContain("\"id\":" + primeiraNotaId);
+
+        ResponseEntity<String> conflito = restTemplate.exchange(
+            "/api/v1/listas/" + segundaLista.id() + "/nota", HttpMethod.PATCH,
+            json(token, "{\"notaId\":" + primeiraNotaId + ",\"updatedAt\":\""
+                + segundaLista.updatedAt() + "\"}"),
+            String.class);
+        assertThat(conflito.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+        ResponseEntity<ListaCompraResponse> troca = restTemplate.exchange(
+            "/api/v1/listas/" + primeiraLista.id() + "/nota", HttpMethod.PATCH,
+            json(token, "{\"notaId\":" + segundaNotaId + ",\"updatedAt\":\""
+                + vinculo.getBody().updatedAt() + "\"}"),
+            ListaCompraResponse.class);
+        assertThat(troca.getBody().nota().id()).isEqualTo(segundaNotaId);
+
+        ResponseEntity<ListaCompraResponse> desvinculo = restTemplate.exchange(
+            "/api/v1/listas/" + primeiraLista.id() + "/nota", HttpMethod.PATCH,
+            json(token, "{\"notaId\":null,\"updatedAt\":\"" + troca.getBody().updatedAt() + "\"}"),
+            ListaCompraResponse.class);
+        assertThat(desvinculo.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(desvinculo.getBody().nota()).isNull();
+        }
+
+        @Test
+        void deveCadastrarNotaEVincularAtomicamenteALista() throws Exception {
+        String token = autenticar("usuario1@poupacompra.com");
+        ListaCompraResponse lista = criarLista(token, "Compra finalizada");
+
+        ResponseEntity<ListaCompraResponse> response = restTemplate.exchange(
+            "/api/v1/listas/" + lista.id() + "/nota", HttpMethod.POST,
+            json(token, criarPayloadNotaVinculada(lista.updatedAt())), ListaCompraResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().nota()).isNotNull();
+        assertThat(notaRepository.count()).isOne();
+        assertThat(jdbcTemplate.queryForObject("SELECT nota_id FROM lista_compra WHERE id = ?", Long.class,
+            lista.id())).isEqualTo(response.getBody().nota().id());
+        }
+
+        @Test
+        void deveOcultarNotaDeOutroUsuarioAoVincular() {
+        String tokenUsuarioUm = autenticar("usuario1@poupacompra.com");
+        Long outroUsuarioId = usuarioRepository.findByEmailIgnoreCase("usuario2@poupacompra.com").orElseThrow().getId();
+        Long estabelecimentoId = criarEstabelecimento("Mercado privado", "33333333333333");
+        Long notaAlheiaId = criarNota(outroUsuarioId, estabelecimentoId, "nota-alheia", 1);
+        ListaCompraResponse lista = criarLista(tokenUsuarioUm, "Lista própria");
+
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/api/v1/listas/" + lista.id() + "/nota", HttpMethod.PATCH,
+            json(tokenUsuarioUm, "{\"notaId\":" + notaAlheiaId + ",\"updatedAt\":\""
+                + lista.updatedAt() + "\"}"), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
 
     @Test
@@ -256,6 +396,43 @@ class ListaCompraIntegrationTest {
         Usuario usuario = new Usuario(nome, email, passwordEncoder.encode(senha));
         usuario.setEmailVerificado(true);
         usuarioRepository.save(usuario);
+    }
+
+    private Long criarEstabelecimento(String nome, String cpfCnpj) {
+        jdbcTemplate.update("INSERT INTO estabelecimento (nome_estabelecimento, cpf_cnpj, endereco) VALUES (?, ?, ?)",
+                nome, cpfCnpj, "Rua de Teste");
+        return jdbcTemplate.queryForObject("SELECT id FROM estabelecimento WHERE cpf_cnpj = ?", Long.class, cpfCnpj);
+    }
+
+    private Long criarNota(Long usuarioId, Long estabelecimentoId, String chave, int quantidadeItens) {
+        jdbcTemplate.update("""
+                INSERT INTO geral_nota
+                    (quantidade_itens, valor_total, usuario_id, uf_cfe, url_cfe, chave_acesso, estabelecimento_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, quantidadeItens, 10.0, usuarioId, "SP", "https://nota/" + chave, chave, estabelecimentoId);
+        return jdbcTemplate.queryForObject("SELECT id FROM geral_nota WHERE chave_acesso = ?", Long.class, chave);
+    }
+
+    private void criarItemNota(Long notaId, Long codigoItem, String descricao) {
+        jdbcTemplate.update("""
+                INSERT INTO itens_nota
+                    (descricao, quantidade, tipo_unidade, valor_unitario, valor_total, nota_id, codigo_item)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, descricao, 1.0, "UNID", 10.0, 10.0, notaId, codigoItem);
+    }
+
+    private String criarPayloadNotaVinculada(java.time.Instant updatedAt) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode notaCompleta = (ObjectNode) mapper.readTree(
+                new ClassPathResource("payload-nota.json").getInputStream());
+        ObjectNode nota = (ObjectNode) notaCompleta.get("nota");
+        String sufixo = "-vinculada-" + System.nanoTime();
+        nota.put("urlCfe", nota.get("urlCfe").asText() + sufixo);
+        nota.put("chaveAcesso", nota.get("chaveAcesso").asText() + sufixo);
+        ObjectNode request = mapper.createObjectNode();
+        request.put("updatedAt", updatedAt.toString());
+        request.set("nota", notaCompleta);
+        return mapper.writeValueAsString(request);
     }
 
     private String autenticar(String email) {

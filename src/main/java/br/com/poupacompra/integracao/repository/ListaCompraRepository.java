@@ -27,6 +27,10 @@ public interface ListaCompraRepository extends JpaRepository<ListaCompra, Long> 
 
     Optional<ListaCompra> findByIdAndUsuarioId(Long id, Long usuarioId);
 
+    boolean existsByIdAndUsuarioId(Long id, Long usuarioId);
+
+    boolean existsByNotaIdAndIdNot(Long notaId, Long listaId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT lista FROM ListaCompra lista WHERE lista.id = :id AND lista.usuario.id = :usuarioId")
     Optional<ListaCompra> findByIdAndUsuarioIdForUpdate(@Param("id") Long id, @Param("usuarioId") Long usuarioId);

@@ -4,6 +4,17 @@
 
 - Quantidade e unidade dos itens de listas de compras passaram a ser opcionais e independentes no frontend, API e banco de dados.
 - Adicionada a migration `V11` para remover a obrigatoriedade dessas colunas sem alterar migrations já aplicadas.
+- Tornado obrigatório o `codigo_item` dos itens de notas fiscais na API e no banco de dados.
+- Adicionada a migration `V12`, que remove o valor padrão `0` de `codigo_item` e impede valores nulos.
+- Corrigido o build local para não depender de um diretório `.mvn` inexistente.
+- Adicionada a geração de rascunhos de listas de compras a partir de uma a cinco NFC-e do mesmo estabelecimento.
+- Adicionadas seleção paginada de notas próprias, deduplicação por `codigo_item` e preferência pela descrição da nota mais recente.
+- Adicionada a migration `V13` com índices para consulta de notas por usuário/estabelecimento e leitura ordenada dos itens.
+- Integrada à tela de listas a seleção de estabelecimento e notas, mantendo o rascunho local até o salvamento explícito.
+- Adicionado vínculo opcional e exclusivo entre lista de compras e NFC-e, com suporte a troca e desvínculo.
+- Adicionadas seleção paginada de notas disponíveis e criação transacional de NFC-e vinculada à lista.
+- Mantido o cadastro direto de NFC-e sem associação automática a listas de compras.
+- Adicionada a migration `V14` com chave estrangeira e índice único parcial para impedir o reuso da mesma nota.
 
 ## 2026-08-29
 
