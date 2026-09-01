@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01
+
+- Simplificados os logs do backend para registrar uma linha por requisição, com identificador de correlação, método, rota, status e duração.
+- Adicionados logs estruturados para fluxos de autenticação, listas de compras, compartilhamento e eventos WebSocket, usando somente identificadores técnicos.
+- Centralizado o registro de erros de negócio, validação e exceções inesperadas, com stack trace somente para falhas internas.
+- Removida a exposição de tokens de verificação e recuperação de senha nos logs.
+- Desabilitados logs SQL e Hibernate verbosos nos perfis local e de teste.
+
 ## 2026-08-31
 
 - Adicionado compartilhamento de lista de compras com um convidado e aceite obrigatório.

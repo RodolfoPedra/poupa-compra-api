@@ -75,6 +75,7 @@ public class AuthService {
         Usuario usuario = new Usuario(request.nome().trim(), email, passwordEncoder.encode(request.senha()));
         usuario = usuarioRepository.save(usuario);
         emitirTokenVerificacao(usuario);
+        log.info("auth action=register userId={}", usuario.getId());
         return UserResponse.from(usuario);
     }
 
@@ -87,6 +88,7 @@ public class AuthService {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(usuario.getEmail(), request.senha()));
         usuario.setLastLoginAt(Instant.now());
         usuario.setUpdatedAt(Instant.now());
+        log.info("auth action=login userId={}", usuario.getId());
         return emitirTokens(usuario);
     }
 
@@ -94,6 +96,7 @@ public class AuthService {
     public AuthResponse loginSocial(Usuario usuario) {
         usuario.setLastLoginAt(Instant.now());
         usuario.setUpdatedAt(Instant.now());
+        log.info("auth action=socialLogin userId={}", usuario.getId());
         return emitirTokens(usuario);
     }
 
@@ -108,6 +111,7 @@ public class AuthService {
         usuario.setEmailVerificado(true);
         usuario.setUpdatedAt(Instant.now());
         verificationRepository.delete(token);
+        log.info("auth action=emailVerified userId={}", usuario.getId());
     }
 
     @Transactional
@@ -128,7 +132,7 @@ public class AuthService {
         passwordResetTokenRepository.deleteByUsuarioId(usuario.getId());
         String rawToken = tokenGenerator.gerar();
         passwordResetTokenRepository.save(new PasswordResetToken(usuario, tokenGenerator.hash(rawToken), Instant.now().plus(Duration.ofHours(1))));
-        log.info("Token de recuperação de senha para {}: {}", usuario.getEmail(), rawToken);
+        log.info("auth action=passwordResetRequested userId={}", usuario.getId());
     }
 
     @Transactional
@@ -145,6 +149,7 @@ public class AuthService {
                 .filter(refresh -> refresh.getUsuario().getId().equals(usuario.getId()) && refresh.getRevokedAt() == null)
                 .forEach(refresh -> refresh.setRevokedAt(Instant.now()));
         passwordResetTokenRepository.delete(token);
+        log.info("auth action=passwordReset userId={}", usuario.getId());
     }
 
     @Transactional
@@ -155,13 +160,17 @@ public class AuthService {
             throw new TokenInvalidoException("Refresh token expirado ou revogado");
         }
         token.setRevokedAt(Instant.now());
+        log.info("auth action=tokenRefreshed userId={}", token.getUsuario().getId());
         return emitirTokens(token.getUsuario());
     }
 
     @Transactional
     public void logout(RefreshRequest request) {
         refreshTokenRepository.findByTokenHash(tokenGenerator.hash(request.refreshToken()))
-                .ifPresent(token -> token.setRevokedAt(Instant.now()));
+                .ifPresent(token -> {
+                    token.setRevokedAt(Instant.now());
+                    log.info("auth action=logout userId={}", token.getUsuario().getId());
+                });
     }
 
     public Usuario buscarUsuario(String email) {
@@ -179,7 +188,7 @@ public class AuthService {
     private void emitirTokenVerificacao(Usuario usuario) {
         String rawToken = tokenGenerator.gerar();
         verificationRepository.save(new EmailVerificationToken(usuario, tokenGenerator.hash(rawToken), Instant.now().plus(Duration.ofHours(24))));
-        log.info("Token de verificação de e-mail para {}: {}", usuario.getEmail(), rawToken);
+        log.info("auth action=emailVerificationIssued userId={}", usuario.getId());
     }
 
     private String normalizarEmail(String email) {

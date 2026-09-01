@@ -22,9 +22,11 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import br.com.poupacompra.integracao.service.listacompra.ListaCompraAcessoService;
 import br.com.poupacompra.integracao.service.usuario.JwtService;
 import br.com.poupacompra.integracao.service.usuario.UsuarioDetailsService;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private static final String TOPICO_LISTA = "/topic/listas/";
 
@@ -67,6 +69,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                     autorizarAssinatura(accessor);
                 } else if (StompCommand.SEND.equals(accessor.getCommand())) {
+                    log.warn("websocket action=sendRejected user={} destination={}", usuario(accessor), accessor.getDestination());
                     throw new MessagingException("Envio de mensagens não permitido");
                 }
                 return message;
@@ -77,6 +80,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private void autenticar(StompHeaderAccessor accessor) {
         String authorization = accessor.getFirstNativeHeader("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")) {
+            log.warn("websocket action=connectRejected reason=missingToken");
             throw new MessagingException("Token de acesso ausente");
         }
         String token = authorization.substring(7);
@@ -86,24 +90,34 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 throw new MessagingException("Token de acesso inválido");
             }
             accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+            log.info("websocket action=connected user={}", user.getUsername());
         } catch (RuntimeException exception) {
+            log.warn("websocket action=connectRejected reason=invalidToken");
             throw new MessagingException("Token de acesso inválido");
         }
     }
 
     private void autorizarAssinatura(StompHeaderAccessor accessor) {
         if (accessor.getUser() == null) {
+            log.warn("websocket action=subscribeRejected reason=unauthenticated");
             throw new MessagingException("Usuário não autenticado");
         }
         String destination = accessor.getDestination();
         if (destination == null || !destination.startsWith(TOPICO_LISTA)) {
+            log.warn("websocket action=subscribeRejected user={} reason=invalidDestination", usuario(accessor));
             throw new MessagingException("Destino não permitido");
         }
         try {
             Long listaId = Long.valueOf(destination.substring(TOPICO_LISTA.length()));
             acessoService.buscarParaLeitura(accessor.getUser().getName(), listaId);
+            log.info("websocket action=subscribed user={} listaId={}", usuario(accessor), listaId);
         } catch (RuntimeException exception) {
+            log.warn("websocket action=subscribeRejected user={} destination={}", usuario(accessor), destination);
             throw new MessagingException("Assinatura não autorizada");
         }
+    }
+
+    private String usuario(StompHeaderAccessor accessor) {
+        return accessor.getUser() == null ? "anonymous" : accessor.getUser().getName();
     }
 }

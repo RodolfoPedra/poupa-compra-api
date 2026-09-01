@@ -10,8 +10,10 @@ import br.com.poupacompra.integracao.dto.listacompra.ItemListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.TipoEventoLista;
 import br.com.poupacompra.integracao.model.listacompra.ItemListaCompra;
 import br.com.poupacompra.integracao.model.listacompra.ListaCompra;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class ListaCompraEventoPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -42,6 +44,7 @@ public class ListaCompraEventoPublisher {
             @Override
             public void afterCommit() {
                 messagingTemplate.convertAndSend("/topic/listas/" + evento.listaId(), evento);
+                log.info("listEvent type={} listaId={}", evento.tipo(), evento.listaId());
             }
         });
     }

@@ -45,8 +45,10 @@ import br.com.poupacompra.integracao.repository.NotaRepository;
 import br.com.poupacompra.integracao.repository.ProdutoRepository;
 import br.com.poupacompra.integracao.repository.UsuarioRepository;
 import br.com.poupacompra.integracao.service.nota.NotaService;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class ListaCompraService {
     private final ListaCompraRepository listaRepository;
     private final ItemListaCompraRepository itemRepository;
@@ -84,6 +86,8 @@ public class ListaCompraService {
             ListaCompra lista = listaRepository.saveAndFlush(new ListaCompra(usuario, nome));
             itemRepository.saveAll(criarItens(lista, request.itens(), produtos));
             itemRepository.flush();
+                log.info("shoppingList action=created listaId={} ownerId={} itemCount={}", lista.getId(), usuario.getId(),
+                    request.itens().size());
             return montarDetalhe(lista);
         } catch (DataIntegrityViolationException exception) {
             throw traduzirConflito();
@@ -153,6 +157,8 @@ public class ListaCompraService {
         } catch (DataIntegrityViolationException exception) {
             throw traduzirConflito();
         }
+        log.info("shoppingList action=saved listaId={} ownerId={} itemCount={}", listaId, usuarioId,
+            request.itens().size());
         return montarDetalhe(lista);
     }
 
@@ -167,6 +173,8 @@ public class ListaCompraService {
         itemRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.ITEM_SELECAO_ALTERADA, acesso.lista(), item);
+        log.info("shoppingList action=itemSelectionUpdated listaId={} itemId={} profile={}", listaId, itemId,
+            acesso.perfil());
         return montarDetalhe(acesso);
     }
 
@@ -193,6 +201,8 @@ public class ListaCompraService {
             throw traduzirConflito();
         }
         eventoPublisher.publicar(TipoEventoLista.ITEM_ADICIONADO, acesso.lista(), item);
+        log.info("shoppingList action=itemAdded listaId={} itemId={} profile={}", listaId, item.getId(),
+            acesso.perfil());
         return montarDetalhe(acesso);
     }
 
@@ -206,6 +216,8 @@ public class ListaCompraService {
         acesso.lista().touch();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.LISTA_ATUALIZADA, acesso.lista(), null);
+        log.info("shoppingList action=nameUpdated listaId={} ownerId={}", listaId,
+            acesso.lista().getUsuario().getId());
         return montarDetalhe(acesso);
     }
 
@@ -225,6 +237,8 @@ public class ListaCompraService {
         itemRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.ITEM_ATUALIZADO, acesso.lista(), item);
+        log.info("shoppingList action=itemUpdated listaId={} itemId={} ownerId={}", listaId, itemId,
+            acesso.lista().getUsuario().getId());
         return montarDetalhe(acesso);
     }
 
@@ -238,12 +252,16 @@ public class ListaCompraService {
         itemRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicarRemocao(acesso.lista(), itemId);
+        log.info("shoppingList action=itemRemoved listaId={} itemId={} ownerId={}", listaId, itemId,
+            acesso.lista().getUsuario().getId());
         return montarDetalhe(acesso);
     }
 
     @Transactional
     public void excluir(String email, Long listaId) {
-        listaRepository.delete(Objects.requireNonNull(buscarListaDoUsuario(email, listaId)));
+        ListaCompra lista = Objects.requireNonNull(buscarListaDoUsuario(email, listaId));
+        listaRepository.delete(lista);
+        log.info("shoppingList action=deleted listaId={} ownerId={}", listaId, lista.getUsuario().getId());
     }
 
     @Transactional(readOnly = true)
@@ -272,7 +290,9 @@ public class ListaCompraService {
             }
             lista.setNota(nota);
         }
-        return salvarVinculo(lista);
+        ListaCompraResponse response = salvarVinculo(lista);
+        log.info("shoppingList action=invoiceLinked listaId={} ownerId={} notaId={}", listaId, usuario.getId(), notaId);
+        return response;
     }
 
     @Transactional
@@ -281,7 +301,10 @@ public class ListaCompraService {
         Usuario usuario = buscarUsuario(email);
         ListaCompra lista = buscarListaParaAtualizacao(listaId, usuario.getId(), updatedAt);
         lista.setNota(notaService.salvarNota(notaRequest));
-        return salvarVinculo(lista);
+        ListaCompraResponse response = salvarVinculo(lista);
+        log.info("shoppingList action=invoiceCreatedAndLinked listaId={} ownerId={} notaId={}", listaId,
+            usuario.getId(), response.nota().id());
+        return response;
     }
 
     private ListaCompra buscarListaParaAtualizacao(Long listaId, Long usuarioId, Instant updatedAt) {

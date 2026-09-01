@@ -47,62 +47,14 @@ security:
       client-id: ${APPLE_CLIENT_ID:}
       client-secret: ${APPLE_CLIENT_SECRET:}
 logging:
-  group:
-    tomcat: "org.apache.catalina,org.apache.coyote,org.apache.tomcat,org.apache.http"
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{requestId:-}] %logger{36} - %msg%n"
   level:
     ROOT: INFO
-    tomcat: INFO
-    sql: INFO
-    web: INFO
-    "[poupacompra.integracao]": DEBUG
-    "[ch.qos.logback]": ERROR
-    "[com.amazonaws]": WARN
-    "[com.netflix.discovery]": ERROR
-    # "[com.zaxxer.hikari]": INFO
-    "[com.tngtech.archunit]": ERROR
-    "[com.sun]": INFO
-    "[io.github.resilience4j]": INFO
-    "[io.micrometer]": INFO
-    "[io.awspring]": INFO
-    "[javax.management.mbeanserver]": INFO
-    "[javax.management.remote.rmi]": INFO
-    "[javax.xml]": INFO
-    "[jdk.event.security]": INFO
+    "[br.com.poupacompra.integracao]": INFO
+    "[org.springframework]": WARN
+    "[org.hibernate]": WARN
     "[org.flywaydb]": INFO
-    "[org.jboss]": INFO
-    "[org.hibernate]": ERROR
-    "[org.mariadb]": INFO
-    "[org.postgresql]": INFO
-    "[org.springframework.aop]": INFO
-    "[org.springframework.beans]": INFO
-    "[org.springframework.boot]": INFO
-    "[org.springframework.cloud]": INFO
-    "[org.springframework.cloud.configuration]": INFO
-    "[org.springframework.cloud.context]": INFO
-    "[org.springframework.cloud.openfeign]": INFO
-    "[org.springframework.cloud.sleuth]": INFO
-    "[org.springframework.context]": INFO
-    "[org.springframework.core]": INFO
-    "[org.springframework.data]": INFO
-    "[org.springframework.jdbc]": ERROR
-    "[org.springframework.jmx]": ERROR
-    "[org.springframework.orm]": INFO
-    "[org.springframework.oxm]": INFO
-    "[org.springframework.amqp.rabbit]": INFO
-    "[org.springframework.scheduling]": INFO
-    "[org.springframework.security]": ERROR
-    "[org.springframework.test]": INFO
-    "[org.springframework.ui]": ERROR
-    "[org.springframework.web]": INFO
-    "[org.springframework.ws]": INFO
-    "[org.springframework.ws.client.MessageTracing.sent]": TRACE
-    "[org.springframework.ws.client.MessageTracing.received]": TRACE
-    "[_org.springframework.web.servlet]": INFO
-    "[reactor.util]": INFO
-    "[reactor.core]": INFO
-    "[sun.rmi]": ERROR
-    "[sun.net]": DEBUG
-    "[unknown.jul.logger]": ERROR
 ---
 # spring:
 #   config:

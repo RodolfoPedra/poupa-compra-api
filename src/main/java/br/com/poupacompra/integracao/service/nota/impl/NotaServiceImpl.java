@@ -22,8 +22,10 @@ import br.com.poupacompra.integracao.repository.NotaRepository;
 import br.com.poupacompra.integracao.repository.UsuarioRepository;
 import br.com.poupacompra.integracao.service.nota.NotaService;
 import br.com.poupacompra.integracao.service.nota.validation.NotaValidation;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class NotaServiceImpl implements NotaService {
 
   private final NotaRepository notaRepository;
@@ -56,8 +58,9 @@ public class NotaServiceImpl implements NotaService {
     notaValidation.validarNotaExistente(notaDTO.getNota().getChaveAcesso());
 
     GeralNota geralNota = geralNotaConverter.dtoToEntity(notaDTO.getNota());
-    geralNota.setUsuario(usuarioRepository.findByEmailIgnoreCase(SecurityContextHolder.getContext().getAuthentication().getName())
-      .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado")));
+    Usuario usuario = usuarioRepository.findByEmailIgnoreCase(SecurityContextHolder.getContext().getAuthentication().getName())
+      .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado"));
+    geralNota.setUsuario(usuario);
     Estabelecimento estabelecimento = estabelecimentoConverter.dtoToEntity(notaDTO.getEstabelecimento());
     List<ItensNota> itensNota =  itensNotaConverter.dtoToEntity(notaDTO.getItensNota());
 
@@ -72,7 +75,10 @@ public class NotaServiceImpl implements NotaService {
     geralNota.setEstabelecimento(currentEstabelecimento);
     geralNota.setItensNotas(itensNota);
 
-    return notaRepository.save(geralNota);
+    GeralNota notaSalva = notaRepository.save(geralNota);
+    log.info("invoice action=created notaId={} userId={} itemCount={}", notaSalva.getId(), usuario.getId(),
+      itensNota.size());
+    return notaSalva;
   }
 
   @Override

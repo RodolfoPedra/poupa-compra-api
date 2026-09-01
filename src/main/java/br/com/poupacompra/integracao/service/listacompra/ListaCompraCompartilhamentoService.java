@@ -22,8 +22,10 @@ import br.com.poupacompra.integracao.model.usuario.UsuarioStatus;
 import br.com.poupacompra.integracao.repository.CompartilhamentoListaCompraRepository;
 import br.com.poupacompra.integracao.repository.ListaCompraRepository;
 import br.com.poupacompra.integracao.repository.UsuarioRepository;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class ListaCompraCompartilhamentoService {
     private final ListaCompraAcessoService acessoService;
     private final ListaCompraRepository listaRepository;
@@ -63,6 +65,7 @@ public class ListaCompraCompartilhamentoService {
             lista.touch();
             listaRepository.flush();
             eventoPublisher.publicar(TipoEventoLista.LISTA_ATUALIZADA, lista, null);
+            log.info("listSharing action=invited listaId={} ownerId={} guestId={}", listaId, owner.getId(), convidado.getId());
             return CompartilhamentoListaResponse.from(compartilhamento);
         } catch (DataIntegrityViolationException exception) {
             throw new ConflitoException("A lista já possui um convite");
@@ -80,6 +83,7 @@ public class ListaCompraCompartilhamentoService {
         compartilhamentoRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.CONVITE_CANCELADO, listaId);
+        log.info("listSharing action=cancelled listaId={} ownerId={}", listaId, owner.getId());
     }
 
     @Transactional(readOnly = true)
@@ -101,6 +105,7 @@ public class ListaCompraCompartilhamentoService {
         compartilhamentoRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.LISTA_ATUALIZADA, lista, null);
+        log.info("listSharing action=accepted listaId={} guestId={}", lista.getId(), convidado.getId());
         return CompartilhamentoListaResponse.from(compartilhamento);
     }
 
@@ -115,6 +120,7 @@ public class ListaCompraCompartilhamentoService {
         compartilhamentoRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.CONVITE_CANCELADO, lista.getId());
+        log.info("listSharing action=rejected listaId={} guestId={}", lista.getId(), convidado.getId());
     }
 
     @Transactional(readOnly = true)
@@ -137,6 +143,7 @@ public class ListaCompraCompartilhamentoService {
         compartilhamentoRepository.flush();
         listaRepository.flush();
         eventoPublisher.publicar(TipoEventoLista.PARTICIPACAO_ENCERRADA, listaId);
+        log.info("listSharing action=left listaId={} guestId={}", listaId, convidado.getId());
     }
 
     private CompartilhamentoListaCompra buscarConvitePendente(Long conviteId, Long convidadoId) {
