@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-31
+
+- Adicionado compartilhamento de lista de compras com um convidado e aceite obrigatório.
+- Adicionados endpoints granulares para persistência concorrente de nome, itens e seleção no modo colaborativo.
+- Bloqueado o salvamento integral de listas compartilhadas para evitar perda de atualizações.
+- Adicionadas autenticação JWT, autorização por lista e notificações pós-commit via WebSocket/STOMP.
+- Restringidas ao proprietário as operações de exclusão, compartilhamento e vínculo com NFC-e.
+- Adicionadas telas de convites e listas recebidas, atualização em tempo real e estado de conexão no frontend.
+- Adicionada a migration `V15` com unicidade por lista e índice para consulta de convites.
+- Adicionados testes de integração para concorrência, permissões, ciclo do convite e segurança STOMP.
+
 ## 2026-08-30
 
 - Quantidade e unidade dos itens de listas de compras passaram a ser opcionais e independentes no frontend, API e banco de dados.

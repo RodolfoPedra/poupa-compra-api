@@ -57,6 +57,7 @@ public class SecurityConfig {
                             "/integracao-poupa-compra/v3/api-docs/**",
                             "/integracao-poupa-compra/swagger-resources/**",
                             "/integracao-poupa-compra/webjars/**",
+                            "/ws/**",
                             "/error",
                             "/actuator/health")
                         .permitAll()
