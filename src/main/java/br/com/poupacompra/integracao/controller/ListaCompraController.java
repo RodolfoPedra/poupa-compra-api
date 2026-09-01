@@ -1,5 +1,6 @@
 package br.com.poupacompra.integracao.controller;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.poupacompra.integracao.dto.listacompra.AdicionarItemListaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.AtualizarItemListaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.AtualizarNomeListaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.AtualizarSelecaoItemRequest;
 import br.com.poupacompra.integracao.dto.listacompra.AtualizarVinculoNotaRequest;
 import br.com.poupacompra.integracao.dto.listacompra.CadastrarNotaVinculadaRequest;
 import br.com.poupacompra.integracao.dto.listacompra.EstabelecimentoNotaResponse;
@@ -75,6 +80,38 @@ public class ListaCompraController {
     public ResponseEntity<Void> excluir(Authentication authentication, @PathVariable Long listaId) {
         service.excluir(authentication.getName(), listaId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{listaId}/nome")
+    public ListaCompraResponse atualizarNome(Authentication authentication, @PathVariable Long listaId,
+            @Valid @RequestBody AtualizarNomeListaRequest request) {
+        return service.atualizarNome(authentication.getName(), listaId, request.nome(), request.updatedAt());
+    }
+
+    @PostMapping("/{listaId}/itens")
+    public ResponseEntity<ListaCompraResponse> adicionarItem(Authentication authentication, @PathVariable Long listaId,
+            @Valid @RequestBody AdicionarItemListaRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.adicionarItem(authentication.getName(), listaId, request));
+    }
+
+    @PatchMapping("/{listaId}/itens/{itemId}/selecao")
+    public ListaCompraResponse atualizarSelecao(Authentication authentication, @PathVariable Long listaId,
+            @PathVariable Long itemId, @Valid @RequestBody AtualizarSelecaoItemRequest request) {
+        return service.atualizarSelecao(authentication.getName(), listaId, itemId, request.selecionado(),
+                request.updatedAt());
+    }
+
+    @PatchMapping("/{listaId}/itens/{itemId}")
+    public ListaCompraResponse atualizarItem(Authentication authentication, @PathVariable Long listaId,
+            @PathVariable Long itemId, @Valid @RequestBody AtualizarItemListaRequest request) {
+        return service.atualizarItem(authentication.getName(), listaId, itemId, request);
+    }
+
+    @DeleteMapping("/{listaId}/itens/{itemId}")
+    public ListaCompraResponse removerItem(Authentication authentication, @PathVariable Long listaId,
+            @PathVariable Long itemId, @RequestParam Instant updatedAt) {
+        return service.removerItem(authentication.getName(), listaId, itemId, updatedAt);
     }
 
     @GetMapping("/origem-notas/estabelecimentos")

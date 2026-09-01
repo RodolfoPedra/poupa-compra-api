@@ -20,19 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.poupacompra.integracao.common.exception.ConflitoException;
 import br.com.poupacompra.integracao.common.exception.RecursoNaoEncontradoException;
 import br.com.poupacompra.integracao.common.exception.RegraNegocioException;
+import br.com.poupacompra.integracao.dto.listacompra.AdicionarItemListaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.AtualizarItemListaRequest;
+import br.com.poupacompra.integracao.dto.listacompra.CompartilhamentoListaResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ItemListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResponse;
 import br.com.poupacompra.integracao.dto.listacompra.ListaCompraResumoResponse;
 import br.com.poupacompra.integracao.dto.listacompra.NotaOrigemListaResponse;
 import br.com.poupacompra.integracao.dto.listacompra.PaginaResponse;
+import br.com.poupacompra.integracao.dto.listacompra.PerfilAcessoLista;
 import br.com.poupacompra.integracao.dto.listacompra.SalvarItemListaCompraRequest;
 import br.com.poupacompra.integracao.dto.listacompra.SalvarListaCompraRequest;
+import br.com.poupacompra.integracao.dto.listacompra.TipoEventoLista;
 import br.com.poupacompra.integracao.dto.nota.NotaCompletaDTO;
 import br.com.poupacompra.integracao.model.listacompra.ItemListaCompra;
 import br.com.poupacompra.integracao.model.listacompra.ListaCompra;
 import br.com.poupacompra.integracao.model.listacompra.Produto;
 import br.com.poupacompra.integracao.model.listacompra.UnidadeMedida;
 import br.com.poupacompra.integracao.model.usuario.Usuario;
+import br.com.poupacompra.integracao.repository.CompartilhamentoListaCompraRepository;
 import br.com.poupacompra.integracao.repository.ItemListaCompraRepository;
 import br.com.poupacompra.integracao.repository.ListaCompraRepository;
 import br.com.poupacompra.integracao.repository.NotaRepository;
@@ -48,16 +54,23 @@ public class ListaCompraService {
     private final UsuarioRepository usuarioRepository;
     private final NotaRepository notaRepository;
     private final NotaService notaService;
+    private final CompartilhamentoListaCompraRepository compartilhamentoRepository;
+    private final ListaCompraAcessoService acessoService;
+    private final ListaCompraEventoPublisher eventoPublisher;
 
     public ListaCompraService(ListaCompraRepository listaRepository, ItemListaCompraRepository itemRepository,
             ProdutoRepository produtoRepository, UsuarioRepository usuarioRepository, NotaRepository notaRepository,
-            NotaService notaService) {
+            NotaService notaService, CompartilhamentoListaCompraRepository compartilhamentoRepository,
+            ListaCompraAcessoService acessoService, ListaCompraEventoPublisher eventoPublisher) {
         this.listaRepository = listaRepository;
         this.itemRepository = itemRepository;
         this.produtoRepository = produtoRepository;
         this.usuarioRepository = usuarioRepository;
         this.notaRepository = notaRepository;
         this.notaService = notaService;
+        this.compartilhamentoRepository = compartilhamentoRepository;
+        this.acessoService = acessoService;
+        this.eventoPublisher = eventoPublisher;
     }
 
     @Transactional
@@ -85,8 +98,8 @@ public class ListaCompraService {
 
     @Transactional(readOnly = true)
     public ListaCompraResponse buscar(String email, Long listaId) {
-        ListaCompra lista = buscarListaDoUsuario(email, listaId);
-        return montarDetalhe(lista);
+        AcessoListaCompra acesso = acessoService.buscarParaLeitura(email, listaId);
+        return montarDetalhe(acesso);
     }
 
     @Transactional
@@ -94,6 +107,9 @@ public class ListaCompraService {
         Long usuarioId = buscarUsuario(email).getId();
         ListaCompra lista = listaRepository.findByIdAndUsuarioIdForUpdate(listaId, usuarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Lista de compras não encontrada"));
+        if (compartilhamentoRepository.existsByListaId(listaId)) {
+            throw new ConflitoException("A lista está em modo colaborativo e deve ser alterada por operações específicas");
+        }
         validarVersao(request.updatedAt(), lista.getUpdatedAt());
         String nome = request.nome().trim();
         validarNomeDisponivel(lista.getUsuario().getId(), nome, listaId);
@@ -138,6 +154,91 @@ public class ListaCompraService {
             throw traduzirConflito();
         }
         return montarDetalhe(lista);
+    }
+
+    @Transactional
+    public ListaCompraResponse atualizarSelecao(String email, Long listaId, Long itemId, boolean selecionado,
+            Instant updatedAt) {
+        AcessoListaCompra acesso = acessoService.buscarParaColaboracao(email, listaId);
+        ItemListaCompra item = buscarItemParaAtualizacao(listaId, itemId);
+        validarVersao(updatedAt, item.getUpdatedAt());
+        item.setSelecionado(selecionado);
+        acesso.lista().touch();
+        itemRepository.flush();
+        listaRepository.flush();
+        eventoPublisher.publicar(TipoEventoLista.ITEM_SELECAO_ALTERADA, acesso.lista(), item);
+        return montarDetalhe(acesso);
+    }
+
+    @Transactional
+    public ListaCompraResponse adicionarItem(String email, Long listaId, AdicionarItemListaRequest request) {
+        AcessoListaCompra acesso = acessoService.buscarParaColaboracao(email, listaId);
+        Produto produto = null;
+        if (request.produtoId() != null) {
+            produto = produtoRepository.findById(request.produtoId()).filter(Produto::isAtivo)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado"));
+            if (itemRepository.existsByListaIdAndProdutoId(listaId, request.produtoId())) {
+                throw new ConflitoException("O produto já está presente na lista");
+            }
+        }
+        String descricao = produto == null ? normalizarDescricao(request.descricao()) : produto.getNome();
+        validarQuantidade(request.quantidade(), request.unidade());
+        ItemListaCompra item = new ItemListaCompra(acesso.lista(), produto, descricao, request.quantidade(),
+                request.unidade(), itemRepository.findMaiorOrdem(listaId) + 1);
+        try {
+            itemRepository.saveAndFlush(item);
+            acesso.lista().touch();
+            listaRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw traduzirConflito();
+        }
+        eventoPublisher.publicar(TipoEventoLista.ITEM_ADICIONADO, acesso.lista(), item);
+        return montarDetalhe(acesso);
+    }
+
+    @Transactional
+    public ListaCompraResponse atualizarNome(String email, Long listaId, String nome, Instant updatedAt) {
+        AcessoListaCompra acesso = acessoService.buscarOwnerEmColaboracao(email, listaId);
+        validarVersao(updatedAt, acesso.lista().getUpdatedAt());
+        String nomeNormalizado = nome.trim();
+        validarNomeDisponivel(acesso.lista().getUsuario().getId(), nomeNormalizado, listaId);
+        acesso.lista().setNome(nomeNormalizado);
+        acesso.lista().touch();
+        listaRepository.flush();
+        eventoPublisher.publicar(TipoEventoLista.LISTA_ATUALIZADA, acesso.lista(), null);
+        return montarDetalhe(acesso);
+    }
+
+    @Transactional
+    public ListaCompraResponse atualizarItem(String email, Long listaId, Long itemId,
+            AtualizarItemListaRequest request) {
+        AcessoListaCompra acesso = acessoService.buscarOwnerEmColaboracao(email, listaId);
+        ItemListaCompra item = buscarItemParaAtualizacao(listaId, itemId);
+        validarVersao(request.updatedAt(), item.getUpdatedAt());
+        validarQuantidade(request.quantidade(), request.unidade());
+        if (item.getProduto() == null) {
+            item.setDescricao(normalizarDescricao(request.descricao()));
+        }
+        item.setQuantidade(request.quantidade());
+        item.setUnidade(request.unidade());
+        acesso.lista().touch();
+        itemRepository.flush();
+        listaRepository.flush();
+        eventoPublisher.publicar(TipoEventoLista.ITEM_ATUALIZADO, acesso.lista(), item);
+        return montarDetalhe(acesso);
+    }
+
+    @Transactional
+    public ListaCompraResponse removerItem(String email, Long listaId, Long itemId, Instant updatedAt) {
+        AcessoListaCompra acesso = acessoService.buscarOwnerEmColaboracao(email, listaId);
+        ItemListaCompra item = buscarItemParaAtualizacao(listaId, itemId);
+        validarVersao(updatedAt, item.getUpdatedAt());
+        itemRepository.delete(item);
+        acesso.lista().touch();
+        itemRepository.flush();
+        listaRepository.flush();
+        eventoPublisher.publicarRemocao(acesso.lista(), itemId);
+        return montarDetalhe(acesso);
     }
 
     @Transactional
@@ -197,7 +298,15 @@ public class ListaCompraService {
         } catch (DataIntegrityViolationException exception) {
             throw new ConflitoException("A nota fiscal já está vinculada a outra lista");
         }
-        return montarDetalhe(lista);
+        var compartilhamento = compartilhamentoRepository.findByListaId(lista.getId()).orElse(null);
+        if (compartilhamento != null) {
+            eventoPublisher.publicar(TipoEventoLista.LISTA_ATUALIZADA, lista, null);
+        }
+        List<ItemListaCompraResponse> itens = itemRepository
+            .findAllByListaIdOrderByOrdemAscIdAsc(lista.getId()).stream()
+            .map(ItemListaCompraResponse::from).toList();
+        return ListaCompraResponse.from(lista, itens, PerfilAcessoLista.OWNER,
+            CompartilhamentoListaResponse.from(compartilhamento));
     }
 
     private ListaCompraResponse montarDetalhe(ListaCompra lista) {
@@ -205,6 +314,19 @@ public class ListaCompraService {
                 .map(ItemListaCompraResponse::from)
                 .toList();
         return ListaCompraResponse.from(lista, itens);
+    }
+
+    private ListaCompraResponse montarDetalhe(AcessoListaCompra acesso) {
+        List<ItemListaCompraResponse> itens = itemRepository
+                .findAllByListaIdOrderByOrdemAscIdAsc(acesso.lista().getId()).stream()
+                .map(ItemListaCompraResponse::from).toList();
+        return ListaCompraResponse.from(acesso.lista(), itens, acesso.perfil(),
+            CompartilhamentoListaResponse.from(acesso.compartilhamento()));
+    }
+
+    private ItemListaCompra buscarItemParaAtualizacao(Long listaId, Long itemId) {
+        return itemRepository.findByIdAndListaId(itemId, listaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Item não encontrado"));
     }
 
     private ListaCompra buscarListaDoUsuario(String email, Long listaId) {

@@ -34,6 +34,26 @@ public interface ListaCompraRepository extends JpaRepository<ListaCompra, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT lista FROM ListaCompra lista WHERE lista.id = :id AND lista.usuario.id = :usuarioId")
     Optional<ListaCompra> findByIdAndUsuarioIdForUpdate(@Param("id") Long id, @Param("usuarioId") Long usuarioId);
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT lista FROM ListaCompra lista WHERE lista.id = :id")
+        Optional<ListaCompra> findByIdForUpdate(@Param("id") Long id);
+
+        @Query("""
+                        SELECT lista.id AS id, lista.nome AS nome, lista.usuario.nome AS ownerNome,
+                                     COUNT(item.id) AS quantidadeItens,
+                                     COALESCE(SUM(CASE WHEN item.selecionado = true THEN 1 ELSE 0 END), 0) AS quantidadeSelecionados,
+                                     lista.createdAt AS createdAt, lista.updatedAt AS updatedAt
+                        FROM CompartilhamentoListaCompra compartilhamento
+                        JOIN compartilhamento.lista lista
+                        LEFT JOIN ItemListaCompra item ON item.lista = lista
+                        WHERE compartilhamento.convidado.id = :convidadoId
+                            AND compartilhamento.status = br.com.poupacompra.integracao.model.listacompra.StatusCompartilhamentoLista.ACEITO
+                        GROUP BY lista.id, lista.nome, lista.usuario.nome, lista.createdAt, lista.updatedAt
+                        ORDER BY lista.updatedAt DESC
+                        """)
+        List<ListaCompartilhadaResumoProjection> listarCompartilhadas(@Param("convidadoId") Long convidadoId);
+
     boolean existsByUsuarioIdAndNomeIgnoreCase(Long usuarioId, String nome);
     boolean existsByUsuarioIdAndNomeIgnoreCaseAndIdNot(Long usuarioId, String nome, Long id);
 }
