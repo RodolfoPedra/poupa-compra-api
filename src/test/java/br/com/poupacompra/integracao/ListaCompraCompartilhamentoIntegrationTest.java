@@ -184,6 +184,22 @@ class ListaCompraCompartilhamentoIntegrationTest {
         assertThat(vincularNota.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+        @Test
+        void deveRetornarBadRequestQuandoAdicaoColaborativaContemCampoDesconhecido() {
+                String ownerToken = autenticar("owner@poupacompra.com");
+                String guestToken = autenticar("guest@poupacompra.com");
+                ListaCompraResponse lista = criarLista(ownerToken);
+                aceitar(guestToken, convidar(ownerToken, lista).id());
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                                "/api/v1/listas/" + lista.id() + "/itens", HttpMethod.POST,
+                                json(guestToken, "{\"id\":-1,\"descricao\":\"Item inválido\",\"quantidade\":1,\"unidade\":\"UNIDADE\"}"),
+                                String.class);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                assertThat(response.getBody()).isEqualTo("JSON inválido");
+        }
+
     @Test
     void deveRecusarAtualizacaoComVersaoAntigaDoMesmoItem() {
         String ownerToken = autenticar("owner@poupacompra.com");

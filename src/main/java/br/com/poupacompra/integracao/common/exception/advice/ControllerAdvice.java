@@ -3,6 +3,7 @@ package br.com.poupacompra.integracao.common.exception.advice;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -84,6 +85,14 @@ public class ControllerAdvice {
                 .map(erro -> erro.getField()).distinct().collect(Collectors.joining(","));
         log.warn("validationError status=400 path={} fields={}", request.getRequestURI(), campos);
         return "Dados inválidos";
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    String handleInvalidJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("invalidJson status=400 path={} cause={}", request.getRequestURI(),
+                ex.getMostSpecificCause().getClass().getSimpleName());
+        return "JSON inválido";
     }
 
     @ExceptionHandler(Exception.class)
